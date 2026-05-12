@@ -3,6 +3,7 @@ package lat.mediteam.core;
 import lat.mediteam.commands.RootCommand;
 import lat.mediteam.mail.Email;
 import picocli.CommandLine;
+import picocli.CommandLine.ParseResult;
 
 public class RespuestaWorker implements Runnable{
     int id;
@@ -33,9 +34,22 @@ public class RespuestaWorker implements Runnable{
             return;
         }
 
-        // String subject = parsedEmail.getSubject();
+      // String subject = parsedEmail.getSubject();
 
         cmd = new CommandLine(new RootCommand());
-        cmd.execute("usuario crear cesar@example.com 123456 admin".split(" "));
+        // cmd.execute("usuario editar 52 cesar1@example.com 654321".split(" "));
+        
+        // cmd.execute("usuario crear eliezer@example.com 123456".split(" "));
+        // cmd.execute("usuario obtener 52".split(" "));
+        cmd.execute("usuario listar".split(" "));
+        ParseResult parseResult = cmd.getParseResult();
+        if (parseResult.subcommand() != null) {
+            CommandLine sub = parseResult.subcommand().subcommand().commandSpec().commandLine();
+            
+            // todo: definir un formato de respuesta estandarizado para los comandos
+            String respuesta = sub.getExecutionResult();
+
+            System.out.println("Respuesta para - test : " + respuesta);
+        }
     }
 }
