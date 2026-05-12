@@ -9,7 +9,7 @@ public class App
         databaseManager = new DatabaseManager();
      
         // MailListener.runServer();
-        MailListener.mockRun();
+        MailListener.testRun();
     }
 
 }

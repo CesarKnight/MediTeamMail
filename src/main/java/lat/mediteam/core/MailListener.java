@@ -41,10 +41,10 @@ public class MailListener {
 		}
 	}
 
-	public static void mockRun(){
+	public static void testRun(){
 		try {
 			ExecutorService threadPool = Executors.newFixedThreadPool(Config.MAX_THREADS);
-			for (int i = 1; i <= 5; i++) {
+			for (int i = 1; i <= 1; i++) {
 				threadPool.submit(new RespuestaWorker(i, "mockServer", "whatedever"));
 				Thread.sleep(1000);
 			}
