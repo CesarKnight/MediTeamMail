@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import lat.mediteam.models.Usuario;
 import lat.mediteam.services.UsuarioService;
+import lat.mediteam.commands.CommandResponse;
 
 public class UsuarioController {
     
@@ -14,37 +15,35 @@ public class UsuarioController {
         this.service = service;
     }
 
-    public String crearUsuario(String email, String password) {
+    public CommandResponse crearUsuario(String email, String password) {
         try {
             Usuario nuevoUsuario = service.crear(email, password);
-            return "Usuario creado: " + nuevoUsuario.getEmail();
+            return new CommandResponse(true, "Usuario creado: " + nuevoUsuario.getEmail());
         } catch (Exception e) {
-            return e.getMessage();
+            return new CommandResponse(false, e.getMessage());
         }
     }
 
 
-    // por el momento solo devuelve string pero 
-    // todo: definir un formato de respuesta estandarizado
-    public String obtenerUsuario(Long id) {
+    public CommandResponse obtenerUsuario(Long id) {
         try {
             Optional<Usuario> usuario = service.obtenerPorId(id);
             if (usuario.isPresent()) {
-                return "Usuario: " + usuario.get().getEmail();
+                return new CommandResponse(true, "Usuario: " + usuario.get().getEmail());
             } else {
-                return "Usuario no encontrado";
+                return new CommandResponse(false, "Usuario no encontrado");
             }
         } catch (Exception e) {
-            return e.getMessage();
+            return new CommandResponse(false, e.getMessage());
         }
     }
 
     
-    public String listarUsuarios() {
+    public CommandResponse listarUsuarios() {
         try {
             List<Usuario> usuarios = service.listar();
             if (usuarios.isEmpty()) {
-                return "No hay usuarios";
+                return new CommandResponse(true, "No hay usuarios");
             }
 
             StringBuilder resultado = new StringBuilder();
@@ -55,27 +54,29 @@ public class UsuarioController {
                 resultado.append(u.getId()).append(" - ").append(u.getEmail());
             }
 
-            return resultado.toString();
+            return new CommandResponse(true, resultado.toString());
         } catch (Exception e) {
-            return e.getMessage();
+            return new CommandResponse(false, e.getMessage());
         }
     }
 
-    public String editarUsuario(Long id, String email, String password) {
+    public CommandResponse editarUsuario(Long id, String email, String password) {
         try {
             Usuario actualizado = service.actualizar(id, email, password);
-            return "Usuario actualizado: " + actualizado.getEmail();
+            return new CommandResponse(true, "Usuario actualizado: " + actualizado.getEmail());
         } catch (Exception e) {
-            return e.getMessage();
+            return new CommandResponse(false, e.getMessage());
         }
     }
 
-    public String eliminarUsuario(Long id) {
+    public CommandResponse eliminarUsuario(Long id) {
         try {
             boolean ok = service.eliminar(id);
-            return ok ? "Usuario eliminado" : "Usuario no encontrado";
+            return ok
+                ? new CommandResponse(true, "Usuario eliminado")
+                : new CommandResponse(false, "Usuario no encontrado");
         } catch (Exception e) {
-            return e.getMessage();
+            return new CommandResponse(false, e.getMessage());
         }
     }
 

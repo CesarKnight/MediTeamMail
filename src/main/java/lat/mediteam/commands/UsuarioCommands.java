@@ -24,7 +24,7 @@ import lat.mediteam.services.UsuarioService;
 public class UsuarioCommands {
     
     @Command(name = "crear")
-    static class Crear implements Callable<String> {
+    static class Crear implements Callable<CommandResponse> {
         @Parameters(index = "0")
         String email;
 
@@ -32,36 +32,36 @@ public class UsuarioCommands {
         String password;
 
         @Override
-        public String call() {
+        public CommandResponse call() {
             UsuarioController controller = new UsuarioController(new UsuarioService());
             return controller.crearUsuario(email, password);
         }
     }
 
     @Command(name = "obtener")
-    static class Obtener implements Callable<String> {
+    static class Obtener implements Callable<CommandResponse> {
         @Parameters(index = "0")
         Long id;
 
         @Override
-        public String call() {
+        public CommandResponse call() {
             UsuarioController controller = new UsuarioController(new UsuarioService());
             return controller.obtenerUsuario(id);
         }
     }
 
     @Command(name = "listar")
-    static class Listar implements Callable<String> {
+    static class Listar implements Callable<CommandResponse> {
 
         @Override
-        public String call() {
+        public CommandResponse call() {
             UsuarioController controller = new UsuarioController(new UsuarioService());
             return controller.listarUsuarios();
         }
     }
 
     @Command(name = "editar")
-    static class Editar implements Callable<String> {
+    static class Editar implements Callable<CommandResponse> {
         @Parameters(index = "0")
         Long id;
 
@@ -72,19 +72,19 @@ public class UsuarioCommands {
         String password;
 
         @Override
-        public String call() {
+        public CommandResponse call() {
             UsuarioController controller = new UsuarioController(new UsuarioService());
             return controller.editarUsuario(id, email, password);
         }
     }
 
     @Command(name = "eliminar")
-    static class Eliminar implements Callable<String> {
+    static class Eliminar implements Callable<CommandResponse> {
         @Parameters(index = "0")
         Long id;
 
         @Override
-        public String call() {
+        public CommandResponse call() {
             UsuarioController controller = new UsuarioController(new UsuarioService());
             return controller.eliminarUsuario(id);
         }

@@ -1,5 +1,6 @@
 package lat.mediteam.core;
 
+import lat.mediteam.commands.CommandResponse;
 import lat.mediteam.commands.RootCommand;
 import lat.mediteam.mail.Email;
 import picocli.CommandLine;
@@ -8,48 +9,55 @@ import picocli.CommandLine.ParseResult;
 public class RespuestaWorker implements Runnable{
     int id;
     String mailserver;
-    String newRecipient;
-    String Sender;
+    String sender;
     Email parsedEmail;
 
-    CommandLine cmd;
+    CommandLine parser;
 
     public RespuestaWorker(int id, String server, String rawEmail) {
         if (rawEmail == null || rawEmail.isEmpty()) {
             return;
         }
-
         this.id = id;
         this.mailserver = server;
         parsedEmail = new Email(rawEmail);
-        this.newRecipient = parsedEmail.getSender();
-        this.Sender = parsedEmail.getRecipient();
+        this.sender = parsedEmail.getRecipient();
     }
+
+    private CommandResponse executeCommand(String command) {
+        parser.execute(command.split(" "));
+        ParseResult parseResult = parser.getParseResult();
+        if (parseResult.subcommand() != null) {
+            CommandLine sub = parseResult.subcommand().subcommand().commandSpec().commandLine();
+            
+            CommandResponse respuesta = sub.getExecutionResult();
+            return respuesta;
+        }
+        return new CommandResponse(false, "No se pudo ejecutar el comando");
+    }
+
+    private void sendEmail(String recipient, String subject, String body) {
+        // Aquí iría la lógica para enviar un correo electrónico
+        System.out.println("Enviando correo a " + recipient + " con asunto '" + subject + "' y cuerpo: " + body);
+    }
+
+    
 
     @Override
     public void run() {
-        System.out.println("Hilo " + id + " atendiendo a cliente " + newRecipient);
+        System.out.println("Hilo " + id + " atendiendo a cliente " + sender);
         if (parsedEmail == null) {
             System.out.println("No se pudo analizar el correo con ID " + id);
             return;
         }
+        parser = new CommandLine(new RootCommand());
 
-      // String subject = parsedEmail.getSubject();
-
-        cmd = new CommandLine(new RootCommand());
-        // cmd.execute("usuario editar 52 cesar1@example.com 654321".split(" "));
+        String command = "usuario listar";
+        CommandResponse response = executeCommand(command);
         
-        // cmd.execute("usuario crear eliezer@example.com 123456".split(" "));
-        // cmd.execute("usuario obtener 52".split(" "));
-        cmd.execute("usuario listar".split(" "));
-        ParseResult parseResult = cmd.getParseResult();
-        if (parseResult.subcommand() != null) {
-            CommandLine sub = parseResult.subcommand().subcommand().commandSpec().commandLine();
-            
-            // todo: definir un formato de respuesta estandarizado para los comandos
-            String respuesta = sub.getExecutionResult();
-
-            System.out.println("Respuesta para - test : " + respuesta);
-        }
+        // sendEmail(command, command, command);
+        // Para testeo imprimimos 
+        System.out.println("Respuesta para usuario " + sender + ":" + response.getMessage());    
     }
+
 }

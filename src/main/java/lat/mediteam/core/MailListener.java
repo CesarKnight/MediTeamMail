@@ -8,7 +8,7 @@ import lat.mediteam.mail.PopCliente;
 public class MailListener {
     
 	public static void runServer() {
-		final int syncTime = Config.MAIL_SYNC_INTERVAL_MS;
+		final int tasaRefresco = Config.MAIL_SYNC_INTERVAL_MS;
 		final String mailServer = Config.MAIL_SERVER;
 		final String email = Config.MAIL_TO_LISTEN;
 		final String password = Config.PASSWORD;
@@ -33,7 +33,7 @@ public class MailListener {
 				popCliente.disconnect();
 
 				System.out.println("durmiendo... ");
-				Thread.sleep(syncTime);
+				Thread.sleep(tasaRefresco);
 
 			} catch (InterruptedException e) {
 				System.out.println("Error en el hilo de sincronización: " + e.getMessage());
@@ -44,6 +44,7 @@ public class MailListener {
 	public static void testRun(){
 		try {
 			ExecutorService threadPool = Executors.newFixedThreadPool(Config.MAX_THREADS);
+			// simular
 			for (int i = 1; i <= 1; i++) {
 				threadPool.submit(new RespuestaWorker(i, "mockServer", "whatedever"));
 				Thread.sleep(1000);
