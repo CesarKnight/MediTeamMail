@@ -6,6 +6,7 @@ import java.util.Optional;
 import lat.mediteam.models.Usuario;
 import lat.mediteam.services.UsuarioService;
 import lat.mediteam.commands.CommandResponse;
+import lat.mediteam.enums.UsuarioTipo;
 
 public class UsuarioController {
     
@@ -15,9 +16,9 @@ public class UsuarioController {
         this.service = service;
     }
 
-    public CommandResponse crearUsuario(String email, String password) {
+    public CommandResponse crearUsuario(String email, String password, UsuarioTipo tipo) {
         try {
-            Usuario nuevoUsuario = service.crear(email, password);
+            Usuario nuevoUsuario = service.crear(email, password, tipo);
             return new CommandResponse(true, "Usuario creado: " + nuevoUsuario.getEmail());
         } catch (Exception e) {
             return new CommandResponse(false, e.getMessage());
@@ -51,7 +52,7 @@ public class UsuarioController {
                 if (resultado.length() > 0) {
                     resultado.append(System.lineSeparator());
                 }
-                resultado.append(u.getId()).append(" - ").append(u.getEmail());
+                resultado.append(u.getId()).append(" - ").append(u.getEmail()).append(" - ").append(u.getTipo());
             }
 
             return new CommandResponse(true, resultado.toString());

@@ -8,20 +8,21 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import lat.mediteam.models.Usuario;
 import lat.mediteam.core.DatabaseManager;
+import lat.mediteam.enums.UsuarioTipo;
 
 public class UsuarioService {
     private EntityManager crearEntityManager() {
         return DatabaseManager.getEntityManager();
     }
 
-    public Usuario crear(String email, String password) {
+    public Usuario crear(String email, String password, UsuarioTipo tipo) {
         validarCredenciales(email, password);
 
         EntityManager entityManager = crearEntityManager();
         EntityTransaction transaction = entityManager.getTransaction();
 
         try {
-            Usuario usuario = new Usuario(email, password);
+            Usuario usuario = new Usuario(email, password,tipo);
 
             transaction.begin();
             entityManager.persist(usuario);

@@ -6,6 +6,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 import lat.mediteam.controllers.UsuarioController;
+import lat.mediteam.enums.UsuarioTipo;
 import lat.mediteam.services.UsuarioService;
 
 @Command(
@@ -31,10 +32,13 @@ public class UsuarioCommands {
         @Parameters(index = "1")
         String password;
 
+        @Parameters(index = "2")
+        UsuarioTipo tipo;
+
         @Override
         public CommandResponse call() {
             UsuarioController controller = new UsuarioController(new UsuarioService());
-            return controller.crearUsuario(email, password);
+            return controller.crearUsuario(email, password, tipo);
         }
     }
 

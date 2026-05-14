@@ -52,11 +52,12 @@ public class RespuestaWorker implements Runnable{
             return;
         }
         parser = new CommandLine(new RootCommand());
+        parser.setCaseInsensitiveEnumValuesAllowed(true);
 
-        // String command = "usuario crear evans@gmail.com 123";
-        // String command = "usuario listar";
+        // String command = "usuario crear evans@gmail.com 123 medico";
+        String command = "usuario listar";
         // String command = "usuario eliminar 202";
-        String command = "usuario modificar 102 bielcorre@gmail.com 123";
+        // String command = "usuario modificar 102 bielcorre@gmail.com 123";
 
         CommandResponse response = executeCommand(command);
         
