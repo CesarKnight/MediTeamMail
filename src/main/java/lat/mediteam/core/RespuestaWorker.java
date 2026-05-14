@@ -25,7 +25,8 @@ public class RespuestaWorker implements Runnable{
     }
 
     private CommandResponse executeCommand(String command) {
-        parser.execute(command.split(" "));
+        String[] tokens = command.split(" ");
+        parser.execute(tokens);
         ParseResult parseResult = parser.getParseResult();
         if (parseResult.subcommand() != null) {
             CommandLine sub = parseResult.subcommand().subcommand().commandSpec().commandLine();
@@ -33,7 +34,7 @@ public class RespuestaWorker implements Runnable{
             CommandResponse respuesta = sub.getExecutionResult();
             return respuesta;
         }
-        return new CommandResponse(false, "No se pudo ejecutar el comando");
+        return new CommandResponse(false, "No existe el comando : " + tokens[0] + " " + tokens[1]);
     }
 
     private void sendEmail(String recipient, String subject, String body) {
@@ -52,12 +53,21 @@ public class RespuestaWorker implements Runnable{
         }
         parser = new CommandLine(new RootCommand());
 
-        String command = "usuario listar";
+        // String command = "usuario crear evans@gmail.com 123";
+        // String command = "usuario listar";
+        // String command = "usuario eliminar 202";
+        String command = "usuario modificar 102 bielcorre@gmail.com 123";
+
         CommandResponse response = executeCommand(command);
         
         // sendEmail(command, command, command);
         // Para testeo imprimimos 
-        System.out.println("Respuesta para usuario " + sender + ":" + response.getMessage());    
+        if (response.isSuccess()) {
+            System.out.println("Comando ejecutado exitosamente para usuario " + sender);
+        } else {
+            System.out.println("Error al ejecutar comando para usuario " + sender);
+        }
+        System.out.println(response.getMessage());    
     }
 
 }
