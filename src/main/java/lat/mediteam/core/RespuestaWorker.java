@@ -55,9 +55,11 @@ public class RespuestaWorker implements Runnable{
         parser.setCaseInsensitiveEnumValuesAllowed(true);
 
         // String command = "usuario crear evans@gmail.com 123 medico";
-        String command = "usuario listar";
+        // String command = "usuario listar";
         // String command = "usuario eliminar 202";
-        // String command = "usuario modificar 102 bielcorre@gmail.com 123";
+        // String command = "usuario editar 4 eliezer22@gmail.com 123";
+        String command = "admin listar";
+        // String command = "admin crear 1 cesar caballero";
 
         CommandResponse response = executeCommand(command);
         
