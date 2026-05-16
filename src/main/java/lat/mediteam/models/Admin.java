@@ -16,7 +16,7 @@ public class Admin {
     @Getter
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne
     @MapsId
     @JoinColumn(name = "id")
     @Getter
