@@ -99,6 +99,7 @@ java -jar MediTeamMail-1.0-jar-with-dependencies.jar
 ### Ejecución en VSCode
 
 Afortunadamente Vscode con las extensiones necesarias viene con un boton de ejecución de codigo java, F5 es el atajo a dicha funcion
+Gracias a la extension Debugger for java podemos correr el proyecto con un solo boton, no olvides que en la carpeta base del proyecto debe estar el archivo ".env"
 
 Mis extensiones personales para el desarrollo en java:
  
@@ -127,6 +128,6 @@ Mis extensiones personales para el desarrollo en java:
 - Theme 
 - TODO Highlight AllProfiles
 
-Gracias a la extension Debugger for java podemos correr el proyecto con un solo boton, no olvides que en la carpeta base del proyecto debe estar el archivo ".env"
+
 
 
