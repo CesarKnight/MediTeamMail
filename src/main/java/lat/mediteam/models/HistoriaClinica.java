@@ -48,7 +48,7 @@ public class HistoriaClinica {
     protected HistoriaClinica() {}
 
     public HistoriaClinica(HistoriaClinicaEstado estado, HistoriaClinicaTipo tipo, Medico medicoCreador) {
-    this.fechaCreacion = java.time.LocalDateTime.now().toString();
+    this.fechaCreacion = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     this.estado = estado;
     this.tipo = tipo;
     this.medicoCreador = medicoCreador;
