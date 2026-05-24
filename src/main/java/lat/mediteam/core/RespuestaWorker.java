@@ -58,9 +58,21 @@ public class RespuestaWorker implements Runnable{
         // String command = "usuario listar";
         // String command = "usuario eliminar 202";
         // String command = "usuario editar 4 eliezer22@gmail.com 123";
-        String command = "admin listar";
+        // String command = "admin listar";
         // String command = "admin crear 1 cesar caballero";
 
+        //String command = "usuario crear prueba@gmail.com 123456 MEDICO";
+        //String command = "medico crear 1 Carlos Pinto 9876543 Cardiologia 1985-10-12";
+        //String command = "usuario crear paciente@gmail.com 123456 PACIENTE";
+        //String command = "paciente crear 4 Juan";
+        //String command = "historia crear 4 1 2025-01-01 pendiente diagnostico";
+        //String command = "diagnostico crear 2 Paciente-con-fiebre-alta";
+        //String command = "tratamiento crear 2 Reposo-y-medicacion";
+        //String command = "involucrados asignar 1 2";
+
+        //String command = "historia crear 1 2025-01-01 pendiente diagnostico";
+        String command = "historia crear 1 2025-01-01 pendiente diagnostico";
+        //String command = "historia crear 1 2025-01-01 pendiente diagnostico";
         CommandResponse response = executeCommand(command);
         
         // sendEmail(command, command, command);
