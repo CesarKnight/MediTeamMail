@@ -15,9 +15,9 @@ public class HistoriaClinicaController {
         this.service = service;
     }
 
-    public CommandResponse crearHistoria(Long medicoId, String fecha, String estado, String tipo) {
+    public CommandResponse crearHistoria(Long medicoId, String estado, String tipo) {
         try {
-            HistoriaClinica nueva = service.crear(medicoId, fecha, estado, tipo);
+            HistoriaClinica nueva = service.crear(medicoId, estado, tipo);
             return new CommandResponse(true, "Historia clinica creada con id: " + nueva.getId());
         } catch (Exception e) {
             return new CommandResponse(false, e.getMessage());
@@ -31,7 +31,7 @@ public class HistoriaClinicaController {
                 HistoriaClinica h = historia.get();
                 return new CommandResponse(true,
                     "Historia #" + h.getId() +
-                    " - Fecha: " + h.getFecha() +
+                    " - Fecha: " + h.getFechaCreacion() +
                     " - Estado: " + h.getEstado() +
                     " - Tipo: " + h.getTipo() +
                     " - Medico ID: " + h.getMedicoCreador().getId());
@@ -56,7 +56,7 @@ public class HistoriaClinicaController {
                     resultado.append(System.lineSeparator());
                 }
                 resultado.append(h.getId()).append(" - ")
-                    .append("Fecha: ").append(h.getFecha())
+                    .append("Fecha: ").append(h.getFechaCreacion())
                     .append(" - Estado: ").append(h.getEstado())
                     .append(" - Tipo: ").append(h.getTipo())
                     .append(" - Medico ID: ").append(h.getMedicoCreador().getId());
@@ -68,9 +68,9 @@ public class HistoriaClinicaController {
         }
     }
 
-    public CommandResponse editarHistoria(Long id, String fecha, String estado, String tipo) {
+    public CommandResponse editarHistoria(Long id, String estado, String tipo) {
         try {
-            HistoriaClinica actualizada = service.actualizar(id, fecha, estado, tipo);
+            HistoriaClinica actualizada = service.actualizar(id, estado, tipo);
             return new CommandResponse(true, "Historia clinica actualizada con id: " + actualizada.getId());
         } catch (Exception e) {
             return new CommandResponse(false, e.getMessage());

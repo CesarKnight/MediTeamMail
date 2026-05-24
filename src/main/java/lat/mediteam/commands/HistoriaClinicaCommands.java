@@ -27,18 +27,15 @@ public class HistoriaClinicaCommands {
         Long medicoId;
 
         @Parameters(index = "1")
-        String fecha;
-
-        @Parameters(index = "2")
         String estado;
 
-        @Parameters(index = "3")
+        @Parameters(index = "2")
         String tipo;
 
         @Override
         public CommandResponse call() {
             HistoriaClinicaController controller = new HistoriaClinicaController(new HistoriaClinicaService());
-            return controller.crearHistoria(medicoId, fecha, estado, tipo);
+            return controller.crearHistoria(medicoId, estado, tipo);
         }
     }
 
@@ -69,18 +66,15 @@ public class HistoriaClinicaCommands {
         Long id;
 
         @Parameters(index = "1")
-        String fecha;
-
-        @Parameters(index = "2")
         String estado;
 
-        @Parameters(index = "3")
+        @Parameters(index = "2")
         String tipo;
 
         @Override
         public CommandResponse call() {
             HistoriaClinicaController controller = new HistoriaClinicaController(new HistoriaClinicaService());
-            return controller.editarHistoria(id, fecha, estado, tipo);
+            return controller.editarHistoria(id, estado, tipo);
         }
     }
 

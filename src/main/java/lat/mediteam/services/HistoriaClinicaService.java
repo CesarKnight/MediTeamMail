@@ -18,8 +18,8 @@ public class HistoriaClinicaService {
         return DatabaseManager.getEntityManager();
     }
 
-    public HistoriaClinica crear(Long medicoId, String fecha, String estado, String tipo) {
-        validarDatos(medicoId, fecha, estado, tipo);
+    public HistoriaClinica crear(Long medicoId, String estado, String tipo) {
+        validarDatos(medicoId, estado, tipo);
 
         EntityManager entityManager = crearEntityManager();
         EntityTransaction transaction = entityManager.getTransaction();
@@ -31,7 +31,6 @@ public class HistoriaClinicaService {
             }
 
             HistoriaClinica historia = new HistoriaClinica(
-                fecha,
                 HistoriaClinicaEstado.valueOf(estado.toLowerCase()),
                 HistoriaClinicaTipo.valueOf(tipo.toLowerCase()),
                 medico
@@ -87,8 +86,8 @@ public class HistoriaClinicaService {
         }
     }
 
-    public HistoriaClinica actualizar(Long id, String fecha, String estado, String tipo) {
-        validarCampos(fecha, estado, tipo);
+    public HistoriaClinica actualizar(Long id, String estado, String tipo) {
+        validarCampos(estado, tipo);
 
         EntityManager entityManager = crearEntityManager();
         EntityTransaction transaction = entityManager.getTransaction();
@@ -101,7 +100,6 @@ public class HistoriaClinicaService {
             }
 
             transaction.begin();
-            historia.setFecha(fecha);
             historia.setEstado(HistoriaClinicaEstado.valueOf(estado.toLowerCase()));
             historia.setTipo(HistoriaClinicaTipo.valueOf(tipo.toLowerCase()));
             historia = entityManager.merge(historia);
@@ -151,17 +149,14 @@ public class HistoriaClinicaService {
         }
     }
 
-    private void validarDatos(Long medicoId, String fecha, String estado, String tipo) {
-        if (medicoId == null || medicoId <= 0) {
-            throw new IllegalArgumentException("El id de medico es obligatorio");
+    private void validarDatos(Long medicoId, String estado, String tipo) {
+            if (medicoId == null || medicoId <= 0) {
+                throw new IllegalArgumentException("El id de medico es obligatorio");
+            }
+            validarCampos(estado, tipo);
         }
-        validarCampos(fecha, estado, tipo);
-    }
 
-    private void validarCampos(String fecha, String estado, String tipo) {
-        if (fecha == null || fecha.isBlank()) {
-            throw new IllegalArgumentException("La fecha es obligatoria");
-        }
+        private void validarCampos(String estado, String tipo) {
         if (estado == null || estado.isBlank()) {
             throw new IllegalArgumentException("El estado es obligatorio");
         }
