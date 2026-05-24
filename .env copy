@@ -1,0 +1,16 @@
+# MAILSERVER
+MAIL_SERVER="mail.server.com"
+MAIL_TO_LISTEN="mailwithoutad"
+PASSWORD="password"
+
+# DATABASE
+DB_DIALECT="POSTGRESQL"
+DB_HOST="localhost"
+DB_PORT="5432"
+DB_NAME="mediteam"
+DB_USER="postgres"
+DB_PASSWORD="password"
+
+# APP CONFIG
+COMANDO_EJECUCION="mediteam"
+MAIL_SYNC_INTERVAL_MS=10000
