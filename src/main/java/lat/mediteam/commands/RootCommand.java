@@ -7,12 +7,7 @@ import picocli.CommandLine.Command;
     description = "MediTeam Mail - Sistema de informacion clinica por correo",
     subcommands = {
         UsuarioCommands.class,
-        AdminCommands.class,
-        MedicoCommands.class,
-        HistoriaClinicaCommands.class,
-        MedicosInvolucradosCommands.class,
-        DiagnosticoCommands.class,
-        TratamientoCommands.class
+        AdminCommands.class
     }
 )
 public class RootCommand {
