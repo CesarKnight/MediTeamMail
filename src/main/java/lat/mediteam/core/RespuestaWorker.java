@@ -71,7 +71,9 @@ public class RespuestaWorker implements Runnable{
         //String command = "involucrados asignar 1 2";
 
         //String command = "historia crear 1 2025-01-01 pendiente diagnostico";
-        String command = "historia crear 1 pendiente diagnostico";
+        
+        //String command = "historia crear 1 pendiente diagnostico";
+        String command = "historia agregar_medico 6 1";
         //String command = "historia crear 1 2025-01-01 pendiente diagnostico";
         CommandResponse response = executeCommand(command);
         

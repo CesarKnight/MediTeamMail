@@ -4,7 +4,9 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 import lat.mediteam.controllers.HistoriaClinicaController;
+import lat.mediteam.controllers.MedicosInvolucradosController;
 import lat.mediteam.services.HistoriaClinicaService;
+import lat.mediteam.services.MedicosInvolucradosService;
 
 import java.util.concurrent.Callable;
 
@@ -16,7 +18,9 @@ import java.util.concurrent.Callable;
         HistoriaClinicaCommands.Obtener.class,
         HistoriaClinicaCommands.Listar.class,
         HistoriaClinicaCommands.Editar.class,
-        HistoriaClinicaCommands.Eliminar.class
+        HistoriaClinicaCommands.Eliminar.class,
+        HistoriaClinicaCommands.AgregarMedico.class,
+        HistoriaClinicaCommands.RemoverMedico.class
     }
 )
 public class HistoriaClinicaCommands {
@@ -87,6 +91,36 @@ public class HistoriaClinicaCommands {
         public CommandResponse call() {
             HistoriaClinicaController controller = new HistoriaClinicaController(new HistoriaClinicaService());
             return controller.eliminarHistoria(id);
+        }
+    }
+
+    @Command(name = "agregar_medico")
+    static class AgregarMedico implements Callable<CommandResponse> {
+        @Parameters(index = "0")
+        Long historiaId;
+
+        @Parameters(index = "1")
+        Long medicoId;
+
+        @Override
+        public CommandResponse call() {
+            MedicosInvolucradosController controller = new MedicosInvolucradosController(new MedicosInvolucradosService());
+            return controller.asignarMedico(medicoId, historiaId);
+        }
+    }
+
+    @Command(name = "remover_medico")
+    static class RemoverMedico implements Callable<CommandResponse> {
+        @Parameters(index = "0")
+        Long historiaId;
+
+        @Parameters(index = "1")
+        Long medicoId;
+
+        @Override
+        public CommandResponse call() {
+            MedicosInvolucradosController controller = new MedicosInvolucradosController(new MedicosInvolucradosService());
+            return controller.removerMedico(medicoId, historiaId);
         }
     }
 }
