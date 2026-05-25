@@ -1,20 +1,22 @@
 package lat.mediteam.core;
 
+import java.util.List;
+
 import lat.mediteam.commands.CommandResponse;
-import lat.mediteam.commands.RootCommand;
+import lat.mediteam.commands.Parser;
 import lat.mediteam.mail.Email;
-import picocli.CommandLine;
-import picocli.CommandLine.ParseResult;
 
 public class RespuestaWorker implements Runnable{
     int id;
     String mailserver;
     String sender;
     Email parsedEmail;
+    
+    AppContext appContext;
+    Parser parser;
+    Session session;
 
-    CommandLine parser;
-
-    public RespuestaWorker(int id, String server, String rawEmail) {
+    public RespuestaWorker(int id, String server, String rawEmail, AppContext appContext) {
         if (rawEmail == null || rawEmail.isEmpty()) {
             return;
         }
@@ -22,19 +24,12 @@ public class RespuestaWorker implements Runnable{
         this.mailserver = server;
         parsedEmail = new Email(rawEmail);
         this.sender = parsedEmail.getRecipient();
+        this.appContext = appContext;
     }
 
     private CommandResponse executeCommand(String command) {
-        String[] tokens = command.split(" ");
-        parser.execute(tokens);
-        ParseResult parseResult = parser.getParseResult();
-        if (parseResult.subcommand() != null) {
-            CommandLine sub = parseResult.subcommand().subcommand().commandSpec().commandLine();
-            
-            CommandResponse respuesta = sub.getExecutionResult();
-            return respuesta;
-        }
-        return new CommandResponse(false, "No existe el comando : " + tokens[0] + " " + tokens[1]);
+        List<String> tokens = List.of(command.split(" "));
+        return parser.execute(appContext, session, tokens);
     }
 
     private void sendEmail(String recipient, String subject, String body) {
@@ -42,7 +37,6 @@ public class RespuestaWorker implements Runnable{
         System.out.println("Enviando correo a " + recipient + " con asunto '" + subject + "' y cuerpo: " + body);
     }
 
-    
 
     @Override
     public void run() {
@@ -51,15 +45,17 @@ public class RespuestaWorker implements Runnable{
             System.out.println("No se pudo analizar el correo con ID " + id);
             return;
         }
-        parser = new CommandLine(new RootCommand());
-        parser.setCaseInsensitiveEnumValuesAllowed(true);
+        
+        parser = new Parser();
+        session = appContext.getAuthManager().findByEmail(sender);
 
         // String command = "usuario crear evans@gmail.com 123 medico";
-        // String command = "usuario listar";
+        String command = "usuario listar";
         // String command = "usuario eliminar 202";
         // String command = "usuario editar 4 eliezer22@gmail.com 123";
-        String command = "admin listar";
+        // String command = "admin listar";
         // String command = "admin crear 1 cesar caballero";
+        // String command = "login evans@gmail.com 123";
 
         CommandResponse response = executeCommand(command);
         

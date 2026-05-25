@@ -6,13 +6,15 @@ import java.util.Optional;
 import lat.mediteam.models.Usuario;
 import lat.mediteam.services.UsuarioService;
 import lat.mediteam.commands.CommandResponse;
+import lat.mediteam.core.AppContext;
+import lat.mediteam.core.Session;
 import lat.mediteam.enums.UsuarioTipo;
 
 public class UsuarioController {
     
     private UsuarioService service;
     
-    public UsuarioController(UsuarioService service){
+    public UsuarioController(AppContext ctx, Session session, UsuarioService service){
         this.service = service;
     }
 

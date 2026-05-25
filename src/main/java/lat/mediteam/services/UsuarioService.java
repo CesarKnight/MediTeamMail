@@ -56,6 +56,29 @@ public class UsuarioService {
         }
     }
 
+    public Optional<Usuario> obtenerPorEmail(String email) {
+        EntityManager entityManager = crearEntityManager();
+
+        try {
+            List<Usuario> usuarios = entityManager
+                .createQuery("SELECT u FROM Usuario u WHERE u.email = :email", Usuario.class)
+                .setParameter("email", email)
+                .getResultList();
+
+            if (usuarios.isEmpty()) {
+                return Optional.empty();
+            }
+
+            return Optional.of(usuarios.get(0));
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException("No se pudo obtener el usuario por email", exception);
+        } finally {
+            if (entityManager.isOpen()) {
+                entityManager.close();
+            }
+        }
+    }
+
     public List<Usuario> listar() {
         EntityManager entityManager = crearEntityManager();
 

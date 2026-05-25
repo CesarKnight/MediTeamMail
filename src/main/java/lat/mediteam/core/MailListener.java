@@ -7,7 +7,7 @@ import lat.mediteam.mail.PopCliente;
 
 public class MailListener {
     
-	public static void runServer() {
+	public static void runServer(AppContext appContext) {
 		final int tasaRefresco = Config.MAIL_SYNC_INTERVAL_MS;
 		final String mailServer = Config.MAIL_SERVER;
 		final String email = Config.MAIL_TO_LISTEN;
@@ -26,7 +26,7 @@ public class MailListener {
 
 				int emailCount = popCliente.getEmailCount();
 				for (int i = 1; i <= emailCount; i++) {
-					threadPool.submit(new RespuestaWorker(i, mailServer, email));
+					threadPool.submit(new RespuestaWorker(i, mailServer, email, appContext));
 					popCliente.deleteEmail(i);
 				}
 				popCliente.logout();
@@ -41,12 +41,12 @@ public class MailListener {
 		}
 	}
 
-	public static void testRun(){
+	public static void testRun(AppContext appContext) {
 		try {
 			ExecutorService threadPool = Executors.newFixedThreadPool(Config.MAX_THREADS);
 			// simular
 			for (int i = 1; i <= 1; i++) {
-				threadPool.submit(new RespuestaWorker(i, "mockServer", "whatedever"));
+				threadPool.submit(new RespuestaWorker(i, "mockServer", "whatedever", appContext));
 				Thread.sleep(1000);
 			}
 			threadPool.shutdown();	
