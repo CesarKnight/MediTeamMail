@@ -4,35 +4,32 @@ import java.util.List;
 
 import lat.mediteam.core.AppContext;
 import lat.mediteam.core.Session;
+import lat.mediteam.exceptions.InvalidArgumentException;
 
-public class Parser {
+public class Parser  {
     List<Class<? extends Command>> subCommandsClasses = List.of(
         UsuarioCommands.class
     );
 
-    public CommandResponse execute(AppContext ctx, Session session, List<String> args) {        
+    public CommandResponse execute (AppContext ctx, Session session, List<String> args) {        
         if (args.isEmpty()) {
-            return new CommandResponse(false, "No se proporcionó ningún comando");
+            throw new InvalidArgumentException( "No se proporcionó ningún comando");
         }
-
-        String mainCommand;
-        try {
-            mainCommand = args.get(0);
-            mainCommand = mainCommand.toLowerCase();
-       } catch (Exception e) {
-            return new CommandResponse(false, "Error al procesar el comando: " + e.getMessage());
-       }
-
+  
+        String mainCommand = args.remove(0).toLowerCase();
+    
         switch (mainCommand) {
             case "usuario":
                 return new UsuarioCommands().execute(ctx, session, args);
+            case "ayuda":
+                return getAllHelp();
             default:
-                return new CommandResponse(false, "Comando desconocido: " + mainCommand);
+                throw new InvalidArgumentException( "Comando desconocido: " + mainCommand);
         }
     }
-
-    
-    public CommandResponse getHelp() {
+   
+    // diavlo
+    public CommandResponse getAllHelp() {
         StringBuilder allHelp = new StringBuilder();
         for (Class<? extends Command> commandClass : subCommandsClasses) {
             try {
