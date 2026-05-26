@@ -6,7 +6,7 @@ import lat.mediteam.core.AppContext;
 import lat.mediteam.core.Session;
 import lat.mediteam.exceptions.InvalidArgumentException;
 
-public class Parser  {
+public class BaseCommands  {
     List<Class<? extends Command>> subCommandsClasses = List.of(
         UsuarioCommands.class
     );

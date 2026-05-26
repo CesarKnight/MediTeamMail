@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import lat.mediteam.commands.CommandResponse;
-import lat.mediteam.commands.Parser;
+import lat.mediteam.commands.BaseCommands;
 import lat.mediteam.mail.Email;
 
 public class RespuestaWorker implements Runnable{
@@ -14,7 +14,7 @@ public class RespuestaWorker implements Runnable{
     Email parsedEmail;
     
     AppContext appContext;
-    Parser parser;
+    BaseCommands parser;
     Session session;
 
     public RespuestaWorker(int id, String server, String rawEmail, AppContext appContext) {
@@ -48,17 +48,17 @@ public class RespuestaWorker implements Runnable{
         }
 
         try {
-            parser = new Parser();
+            parser = new BaseCommands();
             session = appContext.getAuthManager().findByEmail(sender);
 
             // String command = "usuario crear cesar@gmail.com 123 admin";
-            // String command = "usuario listar";
+            String command = "usuario listar";
             // String command = "usuario eliminar 202";
             // String command = "usuario editar 4 eliezer22@gmail.com 123";
             // String command = "admin listar";
             // String command = "admin crear 1 cesar caballero";
             // String command = "login evans@gmail.com 123";
-            String command = "help";
+            // String command = "help";
 
             CommandResponse response = executeCommand(command);
             
