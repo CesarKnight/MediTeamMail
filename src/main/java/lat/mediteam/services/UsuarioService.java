@@ -1,14 +1,16 @@
 package lat.mediteam.services;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.EntityTransaction;
 import lat.mediteam.models.Usuario;
 import lat.mediteam.core.DatabaseManager;
 import lat.mediteam.enums.UsuarioTipo;
+import lat.mediteam.exceptions.InvalidArgumentException;
+import lat.mediteam.exceptions.ServiceException;
 
 public class UsuarioService {
     private EntityManager crearEntityManager() {
@@ -34,7 +36,7 @@ public class UsuarioService {
             if (transaction.isActive()) {
                 transaction.rollback();
             }
-            throw new IllegalStateException("No se pudo crear el usuario", exception);
+            throw new ServiceException("No se pudo crear el usuario", exception);
         } finally {
             if (entityManager.isOpen()) {
                 entityManager.close();
@@ -46,9 +48,15 @@ public class UsuarioService {
         EntityManager entityManager = crearEntityManager();
 
         try {
-            return Optional.ofNullable(entityManager.find(Usuario.class, id));
+            Usuario usuario = entityManager.find(Usuario.class, id);
+            if (usuario == null) {
+                throw new EntityNotFoundException("Usuario no encontrado: " + id);
+            }
+            return Optional.of(usuario);
+        } catch (EntityNotFoundException e) {
+            throw e;
         } catch (RuntimeException exception) {
-            throw new IllegalStateException("No se pudo obtener el usuario", exception);
+            throw new ServiceException("No se pudo obtener el usuario", exception);
         } finally {
             if (entityManager.isOpen()) {
                 entityManager.close();
@@ -71,7 +79,7 @@ public class UsuarioService {
 
             return Optional.of(usuarios.get(0));
         } catch (RuntimeException exception) {
-            throw new IllegalStateException("No se pudo obtener el usuario por email", exception);
+            throw new ServiceException("No se pudo obtener el usuario por email", exception);
         } finally {
             if (entityManager.isOpen()) {
                 entityManager.close();
@@ -87,7 +95,7 @@ public class UsuarioService {
                 .createQuery("SELECT u FROM Usuario u", Usuario.class)
                 .getResultList();
         } catch (RuntimeException exception) {
-            throw new IllegalStateException("No se pudieron listar los usuarios", exception);
+            throw new ServiceException("No se pudieron listar los usuarios", exception);
         } finally {
             if (entityManager.isOpen()) {
                 entityManager.close();
@@ -105,7 +113,7 @@ public class UsuarioService {
             Usuario usuario = entityManager.find(Usuario.class, id);
 
             if (usuario == null) {
-                throw new NoSuchElementException("No existe un usuario con id " + id);
+                throw new EntityNotFoundException("Usuario no encontrado: " + id);
             }
 
             transaction.begin();
@@ -115,16 +123,16 @@ public class UsuarioService {
             transaction.commit();
 
             return usuario;
+        } catch (EntityNotFoundException e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            throw e;
         } catch (RuntimeException exception) {
             if (transaction.isActive()) {
                 transaction.rollback();
             }
-
-            if (exception instanceof NoSuchElementException) {
-                throw exception;
-            }
-
-            throw new IllegalStateException("No se pudo actualizar el usuario", exception);
+            throw new ServiceException("No se pudo actualizar el usuario", exception);
         } finally {
             if (entityManager.isOpen()) {
                 entityManager.close();
@@ -140,7 +148,7 @@ public class UsuarioService {
             Usuario usuario = entityManager.find(Usuario.class, id);
 
             if (usuario == null) {
-                return false;
+                throw new EntityNotFoundException("Usuario no encontrado: " + id);
             }
 
             transaction.begin();
@@ -148,12 +156,16 @@ public class UsuarioService {
             transaction.commit();
 
             return true;
+        } catch (EntityNotFoundException e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            throw e;
         } catch (RuntimeException exception) {
             if (transaction.isActive()) {
                 transaction.rollback();
             }
-
-            throw new IllegalStateException("No se pudo eliminar el usuario", exception);
+            throw new ServiceException("No se pudo eliminar el usuario", exception);
         } finally {
             if (entityManager.isOpen()) {
                 entityManager.close();
@@ -163,11 +175,11 @@ public class UsuarioService {
 
     private void validarCredenciales(String email, String password) {
         if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("El email es obligatorio");
+            throw new InvalidArgumentException("El email es obligatorio");
         }
 
         if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("La contraseña es obligatoria");
+            throw new InvalidArgumentException("La contraseña es obligatoria");
         }
     }
 }

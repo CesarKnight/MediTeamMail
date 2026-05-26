@@ -1,5 +1,6 @@
 package lat.mediteam.core;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import lat.mediteam.commands.CommandResponse;
@@ -28,7 +29,7 @@ public class RespuestaWorker implements Runnable{
     }
 
     private CommandResponse executeCommand(String command) {
-        List<String> tokens = List.of(command.split(" "));
+        List<String> tokens = new ArrayList<>(List.of(command.split(" ")));
         return parser.execute(appContext, session, tokens);
     }
 
@@ -45,28 +46,31 @@ public class RespuestaWorker implements Runnable{
             System.out.println("No se pudo analizar el correo con ID " + id);
             return;
         }
-        
-        parser = new Parser();
-        session = appContext.getAuthManager().findByEmail(sender);
 
-        // String command = "usuario crear evans@gmail.com 123 medico";
-        String command = "usuario listar";
-        // String command = "usuario eliminar 202";
-        // String command = "usuario editar 4 eliezer22@gmail.com 123";
-        // String command = "admin listar";
-        // String command = "admin crear 1 cesar caballero";
-        // String command = "login evans@gmail.com 123";
+        try {
+            parser = new Parser();
+            session = appContext.getAuthManager().findByEmail(sender);
 
-        CommandResponse response = executeCommand(command);
-        
-        // sendEmail(command, command, command);
-        // Para testeo imprimimos 
-        if (response.isSuccess()) {
+            // String command = "usuario crear cesar@gmail.com 123 admin";
+            // String command = "usuario listar";
+            // String command = "usuario eliminar 202";
+            // String command = "usuario editar 4 eliezer22@gmail.com 123";
+            // String command = "admin listar";
+            // String command = "admin crear 1 cesar caballero";
+            // String command = "login evans@gmail.com 123";
+            String command = "help";
+
+            CommandResponse response = executeCommand(command);
+            
             System.out.println("Comando ejecutado exitosamente para usuario " + sender);
-        } else {
-            System.out.println("Error al ejecutar comando para usuario " + sender);
+            System.out.println(response.getMessage());
+            
+        } catch (Exception e) {
+            String errorMessage = e.getClass().getSimpleName() + ": " + e.getMessage();
+            System.out.println("Error en hilo " + id + ": " + errorMessage);
+
+            // sendEmail(sender, "Error al procesar comando", errorMessage);
         }
-        System.out.println(response.getMessage());    
     }
 
 }
