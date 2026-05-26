@@ -13,9 +13,13 @@ import lat.mediteam.enums.UsuarioTipo;
 
 public class UsuarioController {
     
+    private AppContext ctx;
+	private Session session;
     private UsuarioService service;
     
     public UsuarioController(AppContext ctx, Session session, UsuarioService service){
+        this.ctx = ctx;
+		this.session = session;
         this.service = service;
     }
 

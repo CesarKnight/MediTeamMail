@@ -8,7 +8,8 @@ import lat.mediteam.exceptions.InvalidArgumentException;
 
 public class BaseCommands  {
     List<Class<? extends Command>> subCommandsClasses = List.of(
-        UsuarioCommands.class
+        UsuarioCommands.class,
+        AdminCommands.class
     );
 
     public CommandResponse execute (AppContext ctx, Session session, List<String> args) {        
@@ -21,6 +22,8 @@ public class BaseCommands  {
         switch (mainCommand) {
             case "usuario":
                 return new UsuarioCommands().execute(ctx, session, args);
+            case "admin":
+                return new AdminCommands().execute(ctx, session, args);
             case "ayuda":
                 return getAllHelp();
             default:

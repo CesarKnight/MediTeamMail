@@ -52,10 +52,11 @@ public class RespuestaWorker implements Runnable{
             session = appContext.getAuthManager().findByEmail(sender);
 
             // String command = "usuario crear cesar@gmail.com 123 admin";
-            String command = "usuario listar";
+            // String command = "usuario listar";
             // String command = "usuario eliminar 202";
             // String command = "usuario editar 4 eliezer22@gmail.com 123";
             // String command = "admin listar";
+            String command = "admin obtener 1";
             // String command = "admin crear 1 cesar caballero";
             // String command = "login evans@gmail.com 123";
             // String command = "help";

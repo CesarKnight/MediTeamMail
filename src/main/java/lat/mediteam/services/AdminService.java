@@ -1,14 +1,16 @@
 package lat.mediteam.services;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.EntityTransaction;
 import lat.mediteam.models.Admin;
 import lat.mediteam.models.Usuario;
 import lat.mediteam.core.DatabaseManager;
+import lat.mediteam.exceptions.InvalidArgumentException;
+import lat.mediteam.exceptions.ServiceException;
 
 public class AdminService  {
     private EntityManager crearEntityManager() {
@@ -25,7 +27,7 @@ public class AdminService  {
             Usuario usuario = entityManager.find(Usuario.class, usuarioId);
 
             if (usuario == null) {
-                throw new NoSuchElementException("No existe un usuario con id " + usuarioId);
+                throw new EntityNotFoundException("No existe un usuario con id " + usuarioId);
             }
 
             Admin admin = new Admin(nombre, apellido, usuario);
@@ -40,11 +42,11 @@ public class AdminService  {
                 transaction.rollback();
             }
 
-            if (exception instanceof NoSuchElementException) {
+            if (exception instanceof EntityNotFoundException) {
                 throw exception;
             }
 
-            throw new IllegalStateException("No se pudo crear el admin", exception);
+            throw new ServiceException("No se pudo crear el admin", exception);
         } finally {
             if (entityManager.isOpen()) {
                 entityManager.close();
@@ -56,9 +58,15 @@ public class AdminService  {
         EntityManager entityManager = crearEntityManager();
 
         try {
-            return Optional.ofNullable(entityManager.find(Admin.class, id));
+            Admin admin = entityManager.find(Admin.class, id);
+            if (admin == null) {
+                throw new EntityNotFoundException("Admin no encontrado: " + id);
+            }
+            return Optional.of(admin);
+        } catch (EntityNotFoundException e) {
+            throw e;
         } catch (RuntimeException exception) {
-            throw new IllegalStateException("No se pudo obtener el admin", exception);
+            throw new ServiceException("No se pudo obtener el admin", exception);
         } finally {
             if (entityManager.isOpen()) {
                 entityManager.close();
@@ -74,7 +82,7 @@ public class AdminService  {
                 .createQuery("SELECT a FROM Admin a", Admin.class)
                 .getResultList();
         } catch (RuntimeException exception) {
-            throw new IllegalStateException("No se pudieron listar los admins", exception);
+            throw new ServiceException("No se pudieron listar los admins", exception);
         } finally {
             if (entityManager.isOpen()) {
                 entityManager.close();
@@ -92,7 +100,7 @@ public class AdminService  {
             Admin admin = entityManager.find(Admin.class, id);
 
             if (admin == null) {
-                throw new NoSuchElementException("No existe un admin con id " + id);
+                throw new EntityNotFoundException("Admin no encontrado: " + id);
             }
 
             transaction.begin();
@@ -102,16 +110,16 @@ public class AdminService  {
             transaction.commit();
 
             return admin;
+        } catch (EntityNotFoundException e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            throw e;
         } catch (RuntimeException exception) {
             if (transaction.isActive()) {
                 transaction.rollback();
             }
-
-            if (exception instanceof NoSuchElementException) {
-                throw exception;
-            }
-
-            throw new IllegalStateException("No se pudo actualizar el admin", exception);
+            throw new ServiceException("No se pudo actualizar el admin", exception);
         } finally {
             if (entityManager.isOpen()) {
                 entityManager.close();
@@ -127,7 +135,7 @@ public class AdminService  {
             Admin admin = entityManager.find(Admin.class, id);
 
             if (admin == null) {
-                return false;
+                throw new EntityNotFoundException("Admin no encontrado: " + id);
             }
 
             transaction.begin();
@@ -135,12 +143,17 @@ public class AdminService  {
             transaction.commit();
 
             return true;
+        } catch (EntityNotFoundException e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            throw e;
         } catch (RuntimeException exception) {
             if (transaction.isActive()) {
                 transaction.rollback();
             }
 
-            throw new IllegalStateException("No se pudo eliminar el admin", exception);
+            throw new ServiceException("No se pudo eliminar el admin", exception);
         } finally {
             if (entityManager.isOpen()) {
                 entityManager.close();
@@ -150,7 +163,7 @@ public class AdminService  {
 
     private void validarDatos(Long usuarioId, String nombre, String apellido) {
         if (usuarioId == null || usuarioId <= 0) {
-            throw new IllegalArgumentException("El id de usuario es obligatorio");
+            throw new InvalidArgumentException("El id de usuario es obligatorio");
         }
 
         validarNombreYApellido(nombre, apellido);
@@ -158,11 +171,11 @@ public class AdminService  {
 
     private void validarNombreYApellido(String nombre, String apellido) {
         if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre es obligatorio");
+            throw new InvalidArgumentException("El nombre es obligatorio");
         }
 
         if (apellido == null || apellido.isBlank()) {
-            throw new IllegalArgumentException("El apellido es obligatorio");
+            throw new InvalidArgumentException("El apellido es obligatorio");
         }
     }
 }
