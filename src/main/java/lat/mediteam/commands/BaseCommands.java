@@ -19,13 +19,33 @@ public class BaseCommands  {
   
         String mainCommand = args.remove(0).toLowerCase();
     
+        // comandos que funcionen sin o con sesión
         switch (mainCommand) {
+            case "ayuda":
+                return getAllHelp();
+                break;
+        }
+        
+        // comandos que no requieren sesión
+        if (session == null){
+            switch (mainCommand) {
+                case "login":
+                    return new AuthCommands().login(ctx, session, args);
+                default:
+                    throw new InvalidArgumentException( "Comando desconocido o requiere sesión: " + mainCommand);
+            }
+        }
+    
+        // comandos que requieren sesión
+        switch (mainCommand) {
+            case "login":
+                throw new InvalidArgumentException( "Ya estás logueado. Usa 'logout' para cerrar sesión.");
+            case "logout":
+                return new AuthCommands().logout(ctx, session, args);
             case "usuario":
                 return new UsuarioCommands().execute(ctx, session, args);
             case "admin":
                 return new AdminCommands().execute(ctx, session, args);
-            case "ayuda":
-                return getAllHelp();
             default:
                 throw new InvalidArgumentException( "Comando desconocido: " + mainCommand);
         }
@@ -33,6 +53,13 @@ public class BaseCommands  {
    
     // diavlo
     public CommandResponse getAllHelp() {
+        String extra = 
+            "Comandos generales:\n" +
+            "  ayuda - Muestra esta ayuda\n" +
+            "  <comando> ayuda - Muestra ayuda específica para un comando\n" +
+            "  login <email> <password> - Inicia sesión\n" +
+            "  logout - Cierra sesión\n\n";
+
         StringBuilder allHelp = new StringBuilder();
         for (Class<? extends Command> commandClass : subCommandsClasses) {
             try {
@@ -42,6 +69,6 @@ public class BaseCommands  {
                 System.err.println("Error instantiating " + commandClass.getSimpleName());
             }
         }
-        return new CommandResponse(true, allHelp.toString());
+        return new CommandResponse(true, extra + allHelp.toString());
     }
 }
