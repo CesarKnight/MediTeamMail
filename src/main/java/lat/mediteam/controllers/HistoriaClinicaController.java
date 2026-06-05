@@ -2,6 +2,7 @@ package lat.mediteam.controllers;
 
 import lat.mediteam.commands.CommandResponse;
 import lat.mediteam.models.HistoriaClinica;
+import lat.mediteam.models.Medico;
 import lat.mediteam.services.HistoriaClinicaService;
 
 import java.util.List;
@@ -29,12 +30,21 @@ public class HistoriaClinicaController {
             Optional<HistoriaClinica> historia = service.obtenerPorId(id);
             if (historia.isPresent()) {
                 HistoriaClinica h = historia.get();
-                return new CommandResponse(true,
-                    "Historia #" + h.getId() +
-                    " - Fecha: " + h.getFechaCreacion() +
-                    " - Estado: " + h.getEstado() +
-                    " - Tipo: " + h.getTipo() +
-                    " - Medico ID: " + h.getMedicoCreador().getId());
+                StringBuilder sb = new StringBuilder();
+                sb.append("=== Historia Clinica #").append(h.getId()).append(" ===\n");
+                sb.append("Fecha: ").append(h.getFechaCreacion()).append("\n");
+                sb.append("Estado: ").append(h.getEstado()).append("\n");
+                sb.append("Tipo: ").append(h.getTipo()).append("\n");
+                sb.append("Medico Creador ID: ").append(h.getMedicoCreador().getId()).append("\n");
+                sb.append("Medicos Involucrados: ");
+                if (h.getMedicosInvolucrados().isEmpty()) {
+                    sb.append("ninguno");
+                } else {
+                    for (Medico m : h.getMedicosInvolucrados()) {
+                        sb.append("\n  - ").append(m.getNombre()).append(" ").append(m.getApellido());
+                    }
+                }
+                return new CommandResponse(true, sb.toString());
             } else {
                 return new CommandResponse(false, "Historia clinica no encontrada");
             }

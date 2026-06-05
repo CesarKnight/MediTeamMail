@@ -73,8 +73,9 @@ public class RespuestaWorker implements Runnable{
         //String command = "historia crear 1 2025-01-01 pendiente diagnostico";
         
         //String command = "historia crear 1 pendiente diagnostico";
-        String command = "historia agregar_medico 6 1";
+        //String command = "historia agregar_medico 6 1";
         //String command = "historia crear 1 2025-01-01 pendiente diagnostico";
+        String command = "historia obtener 6";
         CommandResponse response = executeCommand(command);
         
         // sendEmail(command, command, command);

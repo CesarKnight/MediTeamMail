@@ -34,7 +34,7 @@ public class HistoriaClinica {
     @Setter
     private HistoriaClinicaTipo tipo;
 
-    @ManyToMany(mappedBy = "historiasInvolucradas")
+    @ManyToMany(mappedBy = "historiasInvolucradas", fetch = FetchType.EAGER)
     @Getter
     @Setter
     private List<Medico> medicosInvolucrados = new ArrayList<>();
