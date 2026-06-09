@@ -23,14 +23,13 @@ public class BaseCommands  {
         switch (mainCommand) {
             case "ayuda":
                 return getAllHelp();
-                break;
         }
         
         // comandos que no requieren sesión
         if (session == null){
             switch (mainCommand) {
                 case "login":
-                    return new AuthCommands().login(ctx, session, args);
+                    // return new AuthCommands().login(ctx, session, args);
                 default:
                     throw new InvalidArgumentException( "Comando desconocido o requiere sesión: " + mainCommand);
             }
@@ -41,7 +40,7 @@ public class BaseCommands  {
             case "login":
                 throw new InvalidArgumentException( "Ya estás logueado. Usa 'logout' para cerrar sesión.");
             case "logout":
-                return new AuthCommands().logout(ctx, session, args);
+                // return new AuthCommands().logout(ctx, session, args);
             case "usuario":
                 return new UsuarioCommands().execute(ctx, session, args);
             case "admin":
