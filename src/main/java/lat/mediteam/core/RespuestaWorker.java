@@ -29,7 +29,7 @@ public class RespuestaWorker implements Runnable{
     }
 
     private CommandResponse executeCommand(String command) {
-        List<String> tokens = new ArrayList<>(List.of(command.split(" ")));
+        List<String> tokens = new ArrayList<>(List.of(command.split("\\s+")));
         return parser.execute(appContext, session, tokens);
     }
 
@@ -51,12 +51,12 @@ public class RespuestaWorker implements Runnable{
             parser = new BaseCommands();
             session = appContext.getAuthManager().findByEmail(sender);
 
-            // String command = "usuario crear cesar@gmail.com 123 admin";
-            // String command = "usuario listar";
+            // String command = "usuario crear choco@gmail.com 123 medico";
+            String command = "usuario    listar";
             // String command = "usuario eliminar 202";
             // String command = "usuario editar 4 eliezer22@gmail.com 123";
             // String command = "admin listar";
-            String command = "admin obtener 1";
+            // String command = "admin obtener 1";
             // String command = "admin crear 1 cesar caballero";
             // String command = "login evans@gmail.com 123";
             // String command = "help";
