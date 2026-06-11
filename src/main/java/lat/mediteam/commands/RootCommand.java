@@ -9,8 +9,13 @@ import picocli.CommandLine.Command;
         UsuarioCommands.class,
         AdminCommands.class,
         ServicioCommands.class,
-        CitaCommands.class
+        CitaCommands.class,
+        MedicoCommands.class,
+        HistoriaClinicaCommands.class,
+        MedicosInvolucradosCommands.class,
+        DiagnosticoCommands.class,
+        TratamientoCommands.class
     }
 )
 public class RootCommand {
-}   
+}

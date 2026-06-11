@@ -1,69 +1,66 @@
 package lat.mediteam.models;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 public class Medico {
 
     @Id
-    @Getter
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne
     @MapsId
     @JoinColumn(name = "id")
-    @Getter
-    @Setter
     private Usuario usuario;
 
     @Column(nullable = false)
-    @Getter
-    @Setter
     private String nombre;
 
     @Column(nullable = false)
-    @Getter
-    @Setter
     private String apellido;
 
     @Column(nullable = false, unique = true)
-    @Getter
-    @Setter
     private String ci;
 
-    @Column
-    @Getter
-    @Setter
+    @Column(nullable = false)
     private String especialidad;
 
     @Column
-    @Getter
-    @Setter
     private String telefono;
 
-    @Column
-    @Getter
-    @Setter
+    @Column(name = "fecha_nacimiento")
     private String fechaNacimiento;
 
     @Column
-    @Getter
-    @Setter
     private String universidad;
 
-    protected Medico() {}
+    @ManyToMany
+    @JoinTable(
+        name = "medicos_involucrados",
+        joinColumns = @JoinColumn(name = "medico_id"),
+        inverseJoinColumns = @JoinColumn(name = "historia_id")
+    )
+    private List<HistoriaClinica> historiasInvolucradas = new ArrayList<>();
 
-    public Medico(String nombre, String apellido, String ci,
-                  String especialidad, String telefono,
-                  String fechaNacimiento, String universidad,
+    protected Medico() {
+    }
+
+    public Medico(String nombre, String apellido, String ci, String especialidad,
+                  String telefono, String fechaNacimiento, String universidad,
                   Usuario usuario) {
         this.nombre = nombre;
         this.apellido = apellido;
