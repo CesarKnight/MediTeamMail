@@ -59,6 +59,7 @@ public class Medico {
     protected Medico() {
     }
 
+    // Constructor completo (con telefono y universidad)
     public Medico(String nombre, String apellido, String ci, String especialidad,
                   String telefono, String fechaNacimiento, String universidad,
                   Usuario usuario) {
@@ -69,6 +70,17 @@ public class Medico {
         this.telefono = telefono;
         this.fechaNacimiento = fechaNacimiento;
         this.universidad = universidad;
+        this.usuario = usuario;
+    }
+
+    // Constructor compatible con MedicoService de Gabriel
+    public Medico(String nombre, String apellido, String ci, String especialidad,
+                  String fechaNacimiento, Usuario usuario) {
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.ci = ci;
+        this.especialidad = especialidad;
+        this.fechaNacimiento = fechaNacimiento;
         this.usuario = usuario;
     }
 }

@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.NoResultException;
 import lat.mediteam.core.DatabaseManager;
 import lat.mediteam.enums.CitaEstado;
 import lat.mediteam.models.Cita;
@@ -82,14 +84,28 @@ public class CitaService {
         }
     }
 
-    public Optional<Cita> obtenerPorId(Long id) {
+        public Optional<Cita> obtenerPorId(Long id) {
         EntityManager entityManager = crearEntityManager();
         try {
-            return Optional.ofNullable(entityManager.find(Cita.class, id));
+            try {
+                Cita cita = entityManager.createQuery(
+                        "SELECT c FROM Cita c " +
+                        "JOIN FETCH c.paciente " +
+                        "JOIN FETCH c.medico " +
+                        "JOIN FETCH c.servicio " +
+                        "WHERE c.id = :id", Cita.class)
+                    .setParameter("id", id)
+                    .getSingleResult();
+                return Optional.of(cita);
+            } catch (NoResultException e) {
+                return Optional.empty();
+            }
         } catch (RuntimeException e) {
             throw new IllegalStateException("No se pudo obtener la cita", e);
         } finally {
-            if (entityManager.isOpen()) entityManager.close();
+            if (entityManager.isOpen()) {
+                entityManager.close();
+            }
         }
     }
 
@@ -97,8 +113,12 @@ public class CitaService {
         EntityManager entityManager = crearEntityManager();
         try {
             return entityManager
-                .createQuery("SELECT c FROM Cita c", Cita.class)
-                .getResultList();
+    .createQuery(
+        "SELECT c FROM Cita c " +
+        "JOIN FETCH c.paciente " +
+        "JOIN FETCH c.medico " +
+        "JOIN FETCH c.servicio", Cita.class)
+    .getResultList();
         } catch (RuntimeException e) {
             throw new IllegalStateException("No se pudieron listar las citas", e);
         } finally {
@@ -110,9 +130,14 @@ public class CitaService {
         EntityManager entityManager = crearEntityManager();
         try {
             return entityManager
-                .createQuery("SELECT c FROM Cita c WHERE c.paciente.id = :id", Cita.class)
-                .setParameter("id", pacienteId)
-                .getResultList();
+    .createQuery(
+        "SELECT c FROM Cita c " +
+        "JOIN FETCH c.paciente " +
+        "JOIN FETCH c.medico " +
+        "JOIN FETCH c.servicio " +
+        "WHERE c.paciente.id = :id", Cita.class)
+    .setParameter("id", pacienteId)
+    .getResultList();
         } catch (RuntimeException e) {
             throw new IllegalStateException("No se pudieron listar las citas", e);
         } finally {
@@ -123,10 +148,15 @@ public class CitaService {
     public List<Cita> listarPorMedico(Long medicoId) {
         EntityManager entityManager = crearEntityManager();
         try {
-            return entityManager
-                .createQuery("SELECT c FROM Cita c WHERE c.medico.id = :id", Cita.class)
-                .setParameter("id", medicoId)
-                .getResultList();
+           return entityManager
+    .createQuery(
+        "SELECT c FROM Cita c " +
+        "JOIN FETCH c.paciente " +
+        "JOIN FETCH c.medico " +
+        "JOIN FETCH c.servicio " +
+        "WHERE c.medico.id = :id", Cita.class)
+    .setParameter("id", medicoId)
+    .getResultList();
         } catch (RuntimeException e) {
             throw new IllegalStateException("No se pudieron listar las citas", e);
         } finally {
