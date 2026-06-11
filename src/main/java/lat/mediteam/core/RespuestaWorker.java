@@ -58,9 +58,9 @@ public class RespuestaWorker implements Runnable{
         // String command = "usuario listar";
         // String command = "usuario eliminar 202";
         // String command = "usuario editar 4 eliezer22@gmail.com 123";
-        String command = "admin listar";
+       // String command = "admin listar";
         // String command = "admin crear 1 cesar caballero";
-
+String command = "usuario crear maria@gmail.com 123 paciente";
         CommandResponse response = executeCommand(command);
         
         // sendEmail(command, command, command);
