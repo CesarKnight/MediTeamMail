@@ -2,6 +2,7 @@ package lat.mediteam.core;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import lat.mediteam.commands.CommandResponse;
 import lat.mediteam.commands.BaseCommands;
@@ -10,7 +11,6 @@ import lat.mediteam.mail.Email;
 public class RespuestaWorker implements Runnable{
     int id;
     String mailserver;
-    String sender;
     Email parsedEmail;
     
     AppContext appContext;
@@ -24,7 +24,6 @@ public class RespuestaWorker implements Runnable{
         this.id = id;
         this.mailserver = server;
         parsedEmail = new Email(rawEmail);
-        this.sender = parsedEmail.getRecipient();
         this.appContext = appContext;
     }
 
@@ -41,7 +40,7 @@ public class RespuestaWorker implements Runnable{
 
     @Override
     public void run() {
-        System.out.println("Hilo " + id + " atendiendo a cliente " + sender);
+        System.out.println("Hilo " + id + " atendiendo a cliente " + parsedEmail.getSender());
         if (parsedEmail == null) {
             System.out.println("No se pudo analizar el correo con ID " + id);
             return;
@@ -49,21 +48,31 @@ public class RespuestaWorker implements Runnable{
 
         try {
             parser = new BaseCommands();
-            session = appContext.getAuthManager().findByEmail(sender);
+            session = appContext.getAuthManager().findByEmail(parsedEmail.getSender());
+            
+            ponerSessiondePrueba(); // todo eliminar en produccion, Pone una sesion ya logeada
+
+            if (session == null) {
+                // session = Session.nonAuthenticated("cesar@gmail.com"); // para probar logeo
+                session = Session.nonAuthenticated(parsedEmail.getSender()); // produccion
+            }
+            
 
             // String command = "usuario crear choco@gmail.com 123 medico";
-            String command = "usuario    listar";
+            // String command = "usuario    listar";
             // String command = "usuario eliminar 202";
             // String command = "usuario editar 4 eliezer22@gmail.com 123";
             // String command = "admin listar";
             // String command = "admin obtener 1";
             // String command = "admin crear 1 cesar caballero";
-            // String command = "login evans@gmail.com 123";
-            // String command = "help";
+            // String command = "login 123";
+            // String command = "logout";
+            String command = "ayuda";
+            
 
             CommandResponse response = executeCommand(command);
             
-            System.out.println("Comando ejecutado exitosamente para usuario " + sender);
+            System.out.println("Comando ejecutado exitosamente para usuario " + parsedEmail.getSender());
             System.out.println(response.getMessage());
             
         } catch (Exception e) {
@@ -74,4 +83,14 @@ public class RespuestaWorker implements Runnable{
         }
     }
 
+    private void ponerSessiondePrueba(){
+        Long pruebaId = 1L;
+        String pruebaEmail = "cesar@gmail.com";
+        Set<String> permisos = Set.of("permiso1", "permiso2"); // todo implementar permisos
+        
+
+        AuthManager authManager = appContext.getAuthManager();
+        authManager.login(pruebaId,pruebaEmail,permisos); // todo implementar permisos
+        session = authManager.findByEmail(pruebaEmail);
+    }
 }

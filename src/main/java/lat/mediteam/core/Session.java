@@ -27,11 +27,24 @@ public final class Session {
         this.expiresAt = expiresAt;
     }
 
+    public static Session nonAuthenticated(String email) {
+        return new Session(
+                null,
+                email,
+                Set.of(),
+                Instant.now(),
+                Instant.now().plusSeconds(3600) // 1 hora
+        );
+    }
     public boolean hasString(String String) {
         return permisos.contains(String);
     }
 
     public boolean isExpired() {
         return Instant.now().isAfter(expiresAt);
+    }
+
+    public boolean isAuthenticated() {
+        return userId != null && !isExpired();
     }
 }
