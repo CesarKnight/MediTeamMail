@@ -25,29 +25,33 @@ public class BaseCommands  {
                 return getAllHelp();
         }
         
-        // comandos que no requieren sesión
-        if (session == null){
+        // comandos que no requieren estar autenticado
+        if (!session.isAuthenticated()){
             switch (mainCommand) {
                 case "login":
-                    // return new AuthCommands().login(ctx, session, args);
+                    return new AuthCommands().login(ctx, session, args);
                 default:
                     throw new InvalidArgumentException( "Comando desconocido o requiere sesión: " + mainCommand);
             }
         }
     
-        // comandos que requieren sesión
-        switch (mainCommand) {
-            case "login":
-                throw new InvalidArgumentException( "Ya estás logueado. Usa 'logout' para cerrar sesión.");
-            case "logout":
-                // return new AuthCommands().logout(ctx, session, args);
-            case "usuario":
-                return new UsuarioCommands().execute(ctx, session, args);
-            case "admin":
-                return new AdminCommands().execute(ctx, session, args);
-            default:
-                throw new InvalidArgumentException( "Comando desconocido: " + mainCommand);
+        // comandos que requieren autenticación
+        if(session.isAuthenticated()){
+            switch (mainCommand) {
+                case "login"    :
+                    throw new InvalidArgumentException( "Ya estás logueado. Usa 'logout' para cerrar sesión.");
+                case "logout":
+                    return new AuthCommands().logout(ctx, session, args);
+                case "usuario":
+                    return new UsuarioCommands().execute(ctx, session, args);
+                case "admin":
+                    return new AdminCommands().execute(ctx, session, args);
+                default:
+                    throw new InvalidArgumentException( "Comando desconocido: " + mainCommand);
+            }
         }
+
+        return new CommandResponse(false, "No se pudo ejecutar el comando: " + mainCommand);
     }
    
     // diavlo

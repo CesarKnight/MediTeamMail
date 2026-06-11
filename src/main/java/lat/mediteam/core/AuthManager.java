@@ -8,11 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AuthManager {
     private final ConcurrentHashMap<String, Session> sessions = new ConcurrentHashMap<>();
 
-    public void login(
-        Long userId,
-        String email,
-        Set<String> permisos
-    ) {
+    public void login(Long userId,String email,Set<String> permisos) {
         Session session = new Session(
             userId,
             email,
