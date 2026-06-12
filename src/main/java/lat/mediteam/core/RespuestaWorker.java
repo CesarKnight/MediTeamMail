@@ -54,12 +54,18 @@ public class RespuestaWorker implements Runnable{
         parser = new CommandLine(new RootCommand());
         parser.setCaseInsensitiveEnumValuesAllowed(true);
 
-        // String command = "usuario crear evans@gmail.com 123 medico";
         // String command = "usuario listar";
-        // String command = "usuario eliminar 202";
         // String command = "usuario editar 4 eliezer22@gmail.com 123";
-        String command = "admin listar";
-        // String command = "admin crear 1 cesar caballero";
+       // String command = "admin listar";
+//String command = "permiso crear ADMIN Permiso de administrador";        // String command = "admin crear 1 cesar caballero";
+//String command = "usuario listar";
+//String command = "permiso crear ADMIN Permiso_de_administrador";
+//String command = "permiso listar";
+//String command = "permiso asignar 1 1";
+//String command = "permiso asignar 1 1";
+//String command = "permiso listardeusuario 1";
+//String command = "permiso remover 1 1";
+String command = "permiso listardeusuario 1";
 
         CommandResponse response = executeCommand(command);
         
