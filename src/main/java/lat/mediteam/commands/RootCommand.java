@@ -12,7 +12,8 @@ import picocli.CommandLine.Command;
         HistoriaClinicaCommands.class,
         MedicosInvolucradosCommands.class,
         DiagnosticoCommands.class,
-        TratamientoCommands.class
+        TratamientoCommands.class,
+        ConsultaCommands.class
     }
 )
 public class RootCommand {
