@@ -1,86 +1,117 @@
 package lat.mediteam.controllers;
 
-import lat.mediteam.commands.CommandResponse;
-import lat.mediteam.models.Tratamiento;
-import lat.mediteam.services.TratamientoService;
-
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.persistence.EntityNotFoundException;
+import lat.mediteam.commands.CommandResponse;
+import lat.mediteam.core.AppContext;
+import lat.mediteam.core.Session;
+import lat.mediteam.models.Tratamiento;
+import lat.mediteam.services.TratamientoService;
+
 public class TratamientoController {
 
+    private AppContext ctx;
+    private Session session;
     private TratamientoService service;
 
-    public TratamientoController(TratamientoService service) {
+    public TratamientoController(
+            AppContext ctx,
+            Session session,
+            TratamientoService service) {
+
+        this.ctx = ctx;
+        this.session = session;
         this.service = service;
     }
 
-    public CommandResponse crearTratamiento(Long historiaId, String tratamiento) {
-        try {
-            Tratamiento nuevo = service.crear(historiaId, tratamiento);
-            return new CommandResponse(true, "Tratamiento creado con id: " + nuevo.getId());
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
-        }
+    public CommandResponse crearTratamiento(
+            Long historiaId,
+            String tratamiento) {
+
+        Tratamiento nuevo = service.crear(
+                historiaId,
+                tratamiento);
+
+        return new CommandResponse(
+                true,
+                "Tratamiento creado con id: "
+                        + nuevo.getId());
     }
 
     public CommandResponse obtenerTratamiento(Long id) {
-        try {
-            Optional<Tratamiento> tratamiento = service.obtenerPorId(id);
-            if (tratamiento.isPresent()) {
-                Tratamiento t = tratamiento.get();
-                return new CommandResponse(true,
-                    "Tratamiento #" + t.getId() +
-                    " - Historia ID: " + t.getHistoria().getId() +
-                    " - Tratamiento: " + t.getTratamiento());
-            } else {
-                return new CommandResponse(false, "Tratamiento no encontrado");
-            }
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
+
+        Optional<Tratamiento> t = service.obtenerPorId(id);
+
+        if (t.isEmpty()) {
+            throw new EntityNotFoundException(
+                    "Tratamiento no encontrado: " + id);
         }
+
+        Tratamiento tratamiento = t.get();
+
+        return new CommandResponse(
+                true,
+                tratamiento.getId()
+                        + " - Historia ID: "
+                        + tratamiento.getHistoria().getId()
+                        + " - Tratamiento: "
+                        + tratamiento.getTratamiento());
     }
 
     public CommandResponse listarTratamientos() {
-        try {
-            List<Tratamiento> tratamientos = service.listar();
-            if (tratamientos.isEmpty()) {
-                return new CommandResponse(true, "No hay tratamientos");
-            }
 
-            StringBuilder resultado = new StringBuilder();
-            for (Tratamiento t : tratamientos) {
-                if (resultado.length() > 0) {
-                    resultado.append(System.lineSeparator());
-                }
-                resultado.append(t.getId()).append(" - ")
-                    .append("Historia ID: ").append(t.getHistoria().getId())
-                    .append(" - Tratamiento: ").append(t.getTratamiento());
-            }
+        List<Tratamiento> tratamientos = service.listar();
 
-            return new CommandResponse(true, resultado.toString());
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
+        if (tratamientos.isEmpty()) {
+            return new CommandResponse(
+                    true,
+                    "No hay tratamientos");
         }
+
+        StringBuilder resultado = new StringBuilder();
+
+        for (Tratamiento t : tratamientos) {
+
+            if (resultado.length() > 0) {
+                resultado.append(
+                        System.lineSeparator());
+            }
+
+            resultado
+                    .append(t.getId())
+                    .append(" - Historia ID: ")
+                    .append(t.getHistoria().getId())
+                    .append(" - Tratamiento: ")
+                    .append(t.getTratamiento());
+        }
+
+        return new CommandResponse(
+                true,
+                resultado.toString());
     }
 
-    public CommandResponse editarTratamiento(Long id, String tratamiento) {
-        try {
-            Tratamiento actualizado = service.actualizar(id, tratamiento);
-            return new CommandResponse(true, "Tratamiento actualizado con id: " + actualizado.getId());
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
-        }
+    public CommandResponse editarTratamiento(
+            Long id,
+            String tratamiento) {
+
+        Tratamiento actualizado = service.actualizar(
+                id,
+                tratamiento);
+
+        return new CommandResponse(
+                true,
+                "Tratamiento actualizado con id: "
+                        + actualizado.getId());
     }
 
     public CommandResponse eliminarTratamiento(Long id) {
-        try {
-            boolean ok = service.eliminar(id);
-            return ok
-                ? new CommandResponse(true, "Tratamiento eliminado")
-                : new CommandResponse(false, "Tratamiento no encontrado");
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
-        }
+
+        service.eliminar(id);
+
+        return new CommandResponse(
+                true,
+                "Tratamiento eliminado");
     }
 }

@@ -14,31 +14,45 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Paciente {
-
     @Id
+    @Getter
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "id")
+    @Getter
+    @Setter
     private Usuario usuario;
 
     @Column(nullable = false)
+    @Getter
+    @Setter
     private String nombre;
 
     @Column(nullable = false)
+    @Getter
+    @Setter
     private String apellido;
 
     @Column(nullable = false, unique = true)
+    @Getter
+    @Setter
     private String ci;
 
     @Column
+    @Getter
+    @Setter
     private String telefono;
 
     @Column
+    @Getter
+    @Setter
     private String email;
 
     @Column
+    @Getter
+    @Setter
     private String fechaNacimiento;
 
     protected Paciente() {}

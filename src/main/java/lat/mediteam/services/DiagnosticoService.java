@@ -1,14 +1,17 @@
 package lat.mediteam.services;
 
+import java.util.List;
+import java.util.Optional;
+
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.EntityTransaction;
+
 import lat.mediteam.core.DatabaseManager;
+import lat.mediteam.exceptions.InvalidArgumentException;
+import lat.mediteam.exceptions.ServiceException;
 import lat.mediteam.models.Diagnostico;
 import lat.mediteam.models.HistoriaClinica;
-
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 public class DiagnosticoService {
 
@@ -16,146 +19,233 @@ public class DiagnosticoService {
         return DatabaseManager.getEntityManager();
     }
 
-    public Diagnostico crear(Long historiaId, String diagnostico) {
-        validarDatos(historiaId, diagnostico);
+    public Diagnostico crear(
+            Long historiaId,
+            String diagnostico) {
 
-        EntityManager entityManager = crearEntityManager();
-        EntityTransaction transaction = entityManager.getTransaction();
+        validarDiagnostico(diagnostico);
+
+        EntityManager em = crearEntityManager();
+        EntityTransaction tx = em.getTransaction();
 
         try {
-            HistoriaClinica historia = entityManager.find(HistoriaClinica.class, historiaId);
+
+            HistoriaClinica historia = em.find(
+                    HistoriaClinica.class,
+                    historiaId);
 
             if (historia == null) {
-                throw new NoSuchElementException("No existe una historia clinica con id " + historiaId);
+                throw new EntityNotFoundException(
+                        "Historia clínica no encontrada: "
+                                + historiaId);
             }
 
-            Diagnostico nuevo = new Diagnostico(diagnostico, historia);
+            Diagnostico nuevo = new Diagnostico(
+                    diagnostico,
+                    historia);
 
-            transaction.begin();
-            entityManager.persist(nuevo);
-            transaction.commit();
+            tx.begin();
+            em.persist(nuevo);
+            tx.commit();
 
             return nuevo;
-        } catch (RuntimeException exception) {
-            if (transaction.isActive()) {
-                transaction.rollback();
+
+        } catch (RuntimeException ex) {
+
+            if (tx.isActive()) {
+                tx.rollback();
             }
 
-            if (exception instanceof NoSuchElementException) {
-                throw exception;
+            if (ex instanceof EntityNotFoundException) {
+                throw ex;
             }
 
-            throw new IllegalStateException("No se pudo crear el diagnostico", exception);
+            throw new ServiceException(
+                    "No se pudo crear el diagnóstico",
+                    ex);
+
         } finally {
-            if (entityManager.isOpen()) {
-                entityManager.close();
+
+            if (em.isOpen()) {
+                em.close();
             }
         }
     }
 
     public Optional<Diagnostico> obtenerPorId(Long id) {
-        EntityManager entityManager = crearEntityManager();
+
+        EntityManager em = crearEntityManager();
 
         try {
-            return Optional.ofNullable(entityManager.find(Diagnostico.class, id));
-        } catch (RuntimeException exception) {
-            throw new IllegalStateException("No se pudo obtener el diagnostico", exception);
+
+            Diagnostico diagnostico = em.find(
+                    Diagnostico.class,
+                    id);
+
+            if (diagnostico == null) {
+                throw new EntityNotFoundException(
+                        "Diagnóstico no encontrado: "
+                                + id);
+            }
+
+            return Optional.of(diagnostico);
+
+        } catch (EntityNotFoundException e) {
+
+            throw e;
+
+        } catch (RuntimeException ex) {
+
+            throw new ServiceException(
+                    "No se pudo obtener el diagnóstico",
+                    ex);
+
         } finally {
-            if (entityManager.isOpen()) {
-                entityManager.close();
+
+            if (em.isOpen()) {
+                em.close();
             }
         }
     }
 
     public List<Diagnostico> listar() {
-        EntityManager entityManager = crearEntityManager();
+
+        EntityManager em = crearEntityManager();
 
         try {
-            return entityManager
-                .createQuery("SELECT d FROM Diagnostico d", Diagnostico.class)
-                .getResultList();
-        } catch (RuntimeException exception) {
-            throw new IllegalStateException("No se pudieron listar los diagnosticos", exception);
+
+            return em.createQuery(
+                    "SELECT d FROM Diagnostico d",
+                    Diagnostico.class).getResultList();
+
+        } catch (RuntimeException ex) {
+
+            throw new ServiceException(
+                    "No se pudieron listar los diagnósticos",
+                    ex);
+
         } finally {
-            if (entityManager.isOpen()) {
-                entityManager.close();
+
+            if (em.isOpen()) {
+                em.close();
             }
         }
     }
 
-    public Diagnostico actualizar(Long id, String diagnostico) {
-        if (diagnostico == null || diagnostico.isBlank()) {
-            throw new IllegalArgumentException("El diagnostico es obligatorio");
-        }
+    public Diagnostico actualizar(
+            Long id,
+            String diagnostico) {
 
-        EntityManager entityManager = crearEntityManager();
-        EntityTransaction transaction = entityManager.getTransaction();
+        validarDiagnostico(diagnostico);
+
+        EntityManager em = crearEntityManager();
+
+        EntityTransaction tx = em.getTransaction();
 
         try {
-            Diagnostico existente = entityManager.find(Diagnostico.class, id);
+
+            Diagnostico existente = em.find(
+                    Diagnostico.class,
+                    id);
 
             if (existente == null) {
-                throw new NoSuchElementException("No existe un diagnostico con id " + id);
+                throw new EntityNotFoundException(
+                        "Diagnóstico no encontrado: "
+                                + id);
             }
 
-            transaction.begin();
-            existente.setDiagnostico(diagnostico);
-            existente = entityManager.merge(existente);
-            transaction.commit();
+            tx.begin();
+
+            existente.setDiagnostico(
+                    diagnostico);
+
+            existente = em.merge(existente);
+
+            tx.commit();
 
             return existente;
-        } catch (RuntimeException exception) {
-            if (transaction.isActive()) {
-                transaction.rollback();
+
+        } catch (RuntimeException ex) {
+
+            if (tx.isActive()) {
+                tx.rollback();
             }
 
-            if (exception instanceof NoSuchElementException) {
-                throw exception;
+            if (ex instanceof EntityNotFoundException) {
+                throw ex;
             }
 
-            throw new IllegalStateException("No se pudo actualizar el diagnostico", exception);
+            throw new ServiceException(
+                    "No se pudo actualizar el diagnóstico",
+                    ex);
+
         } finally {
-            if (entityManager.isOpen()) {
-                entityManager.close();
+
+            if (em.isOpen()) {
+                em.close();
             }
         }
     }
 
     public boolean eliminar(Long id) {
-        EntityManager entityManager = crearEntityManager();
-        EntityTransaction transaction = entityManager.getTransaction();
+
+        EntityManager em = crearEntityManager();
+
+        EntityTransaction tx = em.getTransaction();
 
         try {
-            Diagnostico existente = entityManager.find(Diagnostico.class, id);
+
+            Diagnostico existente = em.find(
+                    Diagnostico.class,
+                    id);
 
             if (existente == null) {
-                return false;
+                throw new EntityNotFoundException(
+                        "Diagnóstico no encontrado: "
+                                + id);
             }
 
-            transaction.begin();
-            entityManager.remove(entityManager.contains(existente) ? existente : entityManager.merge(existente));
-            transaction.commit();
+            tx.begin();
+
+            em.remove(
+                    em.contains(existente)
+                            ? existente
+                            : em.merge(existente));
+
+            tx.commit();
 
             return true;
-        } catch (RuntimeException exception) {
-            if (transaction.isActive()) {
-                transaction.rollback();
+
+        } catch (RuntimeException ex) {
+
+            if (tx.isActive()) {
+                tx.rollback();
             }
 
-            throw new IllegalStateException("No se pudo eliminar el diagnostico", exception);
+            if (ex instanceof EntityNotFoundException) {
+                throw ex;
+            }
+
+            throw new ServiceException(
+                    "No se pudo eliminar el diagnóstico",
+                    ex);
+
         } finally {
-            if (entityManager.isOpen()) {
-                entityManager.close();
+
+            if (em.isOpen()) {
+                em.close();
             }
         }
     }
 
-    private void validarDatos(Long historiaId, String diagnostico) {
-        if (historiaId == null || historiaId <= 0) {
-            throw new IllegalArgumentException("El id de historia clinica es obligatorio");
-        }
-        if (diagnostico == null || diagnostico.isBlank()) {
-            throw new IllegalArgumentException("El diagnostico es obligatorio");
+    private void validarDiagnostico(
+            String diagnostico) {
+
+        if (diagnostico == null
+                || diagnostico.isBlank()) {
+
+            throw new InvalidArgumentException(
+                    "El diagnóstico es obligatorio");
         }
     }
 }

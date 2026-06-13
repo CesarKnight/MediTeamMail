@@ -1,98 +1,228 @@
 package lat.mediteam.commands;
 
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Parameters;
+import java.util.List;
 
 import lat.mediteam.controllers.HistoriaClinicaController;
+import lat.mediteam.core.AppContext;
+import lat.mediteam.core.Session;
+import lat.mediteam.enums.HistoriaClinicaEstado;
+import lat.mediteam.enums.HistoriaClinicaTipo;
+import lat.mediteam.exceptions.InvalidArgumentException;
 import lat.mediteam.services.HistoriaClinicaService;
 
-import java.util.concurrent.Callable;
+public class HistoriaClinicaCommands implements Command {
 
-@Command(
-    name = "historia",
-    description = "Gestion de historias clinicas",
-    subcommands = {
-        HistoriaClinicaCommands.Crear.class,
-        HistoriaClinicaCommands.Obtener.class,
-        HistoriaClinicaCommands.Listar.class,
-        HistoriaClinicaCommands.Editar.class,
-        HistoriaClinicaCommands.Eliminar.class
-    }
-)
-public class HistoriaClinicaCommands {
+    private AppContext ctx;
+    private Session session;
 
-    @Command(name = "crear")
-    static class Crear implements Callable<CommandResponse> {
-        @Parameters(index = "0")
-        Long medicoId;
+    @Override
+    public CommandResponse execute(AppContext ctx, Session session, List<String> args) {
 
-        @Parameters(index = "1")
-        String fecha;
+        if (args.isEmpty()) {
+            throw new InvalidArgumentException(
+                "No se proporcionó ningún subcomando para 'historia'"
+            );
+        }
 
-        @Parameters(index = "2")
-        String estado;
+        this.ctx = ctx;
+        this.session = session;
 
-        @Parameters(index = "3")
-        String tipo;
+        String subCommand = args.remove(0).toLowerCase();
 
-        @Override
-        public CommandResponse call() {
-            HistoriaClinicaController controller = new HistoriaClinicaController(new HistoriaClinicaService());
-            return controller.crearHistoria(medicoId, fecha, estado, tipo);
+        switch (subCommand) {
+            case "crear":
+                return crear(args);
+
+            case "obtener":
+                return obtener(args);
+
+            case "listar":
+                return listar(args);
+
+            case "editar":
+                return editar(args);
+
+            case "eliminar":
+                return eliminar(args);
+
+            default:
+                throw new InvalidArgumentException(
+                    "Subcomando de historia inválido: " + subCommand
+                );
         }
     }
 
-    @Command(name = "obtener")
-    static class Obtener implements Callable<CommandResponse> {
-        @Parameters(index = "0")
-        Long id;
+    @Override
+    public String getHelp() {
+        return "Comandos de historia clínica:\n"
+            + "  historia crear <medicoId> <fecha> <estado> <tipo>\n"
+            + "  historia obtener <id>\n"
+            + "  historia listar\n"
+            + "  historia editar <id> <fecha> <estado> <tipo>\n"
+            + "  historia eliminar <id>";
+    }
 
-        @Override
-        public CommandResponse call() {
-            HistoriaClinicaController controller = new HistoriaClinicaController(new HistoriaClinicaService());
-            return controller.obtenerHistoria(id);
+    private CommandResponse crear(List<String> args) {
+
+        if (args.size() != 4) {
+            throw new InvalidArgumentException(
+                "Argumentos erróneos para 'crear'. "
+                    + "Se requieren 4 argumentos: "
+                    + "<medicoId> <fecha> <estado> <tipo>"
+            );
+        }
+
+        Long medicoId = parseId(args.get(0));
+        String fecha = args.get(1);
+
+        HistoriaClinicaEstado estado =
+            parseEstado(args.get(2));
+
+        HistoriaClinicaTipo tipo =
+            parseTipo(args.get(3));
+
+        HistoriaClinicaController controller =
+            new HistoriaClinicaController(
+                ctx,
+                session,
+                new HistoriaClinicaService()
+            );
+
+        return controller.crearHistoria(
+            medicoId,
+            fecha,
+            estado,
+            tipo
+        );
+    }
+
+    private CommandResponse obtener(List<String> args) {
+
+        if (args.size() != 1) {
+            throw new InvalidArgumentException(
+                "Argumentos erróneos para 'obtener'. "
+                    + "Se requiere 1 argumento: <id>"
+            );
+        }
+
+        Long id = parseId(args.get(0));
+
+        HistoriaClinicaController controller =
+            new HistoriaClinicaController(
+                ctx,
+                session,
+                new HistoriaClinicaService()
+            );
+
+        return controller.obtenerHistoria(id);
+    }
+
+    private CommandResponse listar(List<String> args) {
+
+        if (!args.isEmpty()) {
+            throw new InvalidArgumentException(
+                "Argumentos erróneos para 'listar'. "
+                    + "No se requieren argumentos."
+            );
+        }
+
+        HistoriaClinicaController controller =
+            new HistoriaClinicaController(
+                ctx,
+                session,
+                new HistoriaClinicaService()
+            );
+
+        return controller.listarHistorias();
+    }
+
+    private CommandResponse editar(List<String> args) {
+
+        if (args.size() != 4) {
+            throw new InvalidArgumentException(
+                "Argumentos erróneos para 'editar'. "
+                    + "Se requieren 4 argumentos: "
+                    + "<id> <fecha> <estado> <tipo>"
+            );
+        }
+
+        Long id = parseId(args.get(0));
+
+        String fecha = args.get(1);
+
+        HistoriaClinicaEstado estado =
+            parseEstado(args.get(2));
+
+        HistoriaClinicaTipo tipo =
+            parseTipo(args.get(3));
+
+        HistoriaClinicaController controller =
+            new HistoriaClinicaController(
+                ctx,
+                session,
+                new HistoriaClinicaService()
+            );
+
+        return controller.editarHistoria(
+            id,
+            fecha,
+            estado,
+            tipo
+        );
+    }
+
+    private CommandResponse eliminar(List<String> args) {
+
+        if (args.size() != 1) {
+            throw new InvalidArgumentException(
+                "Argumentos erróneos para 'eliminar'. "
+                    + "Se requiere 1 argumento: <id>"
+            );
+        }
+
+        Long id = parseId(args.get(0));
+
+        HistoriaClinicaController controller =
+            new HistoriaClinicaController(
+                ctx,
+                session,
+                new HistoriaClinicaService()
+            );
+
+        return controller.eliminarHistoria(id);
+    }
+
+    private Long parseId(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new InvalidArgumentException(
+                "ID inválido: " + value
+            );
         }
     }
 
-    @Command(name = "listar")
-    static class Listar implements Callable<CommandResponse> {
-        @Override
-        public CommandResponse call() {
-            HistoriaClinicaController controller = new HistoriaClinicaController(new HistoriaClinicaService());
-            return controller.listarHistorias();
+    private HistoriaClinicaEstado parseEstado(String estado) {
+        try {
+            return HistoriaClinicaEstado.valueOf(
+                estado.toLowerCase()
+            );
+        } catch (Exception e) {
+            throw new InvalidArgumentException(
+                "Estado inválido: " + estado
+            );
         }
     }
 
-    @Command(name = "editar")
-    static class Editar implements Callable<CommandResponse> {
-        @Parameters(index = "0")
-        Long id;
-
-        @Parameters(index = "1")
-        String fecha;
-
-        @Parameters(index = "2")
-        String estado;
-
-        @Parameters(index = "3")
-        String tipo;
-
-        @Override
-        public CommandResponse call() {
-            HistoriaClinicaController controller = new HistoriaClinicaController(new HistoriaClinicaService());
-            return controller.editarHistoria(id, fecha, estado, tipo);
-        }
-    }
-
-    @Command(name = "eliminar")
-    static class Eliminar implements Callable<CommandResponse> {
-        @Parameters(index = "0")
-        Long id;
-
-        @Override
-        public CommandResponse call() {
-            HistoriaClinicaController controller = new HistoriaClinicaController(new HistoriaClinicaService());
-            return controller.eliminarHistoria(id);
+    private HistoriaClinicaTipo parseTipo(String tipo) {
+        try {
+            return HistoriaClinicaTipo.valueOf(
+                tipo.toLowerCase()
+            );
+        } catch (Exception e) {
+            throw new InvalidArgumentException(
+                "Tipo inválido: " + tipo
+            );
         }
     }
 }

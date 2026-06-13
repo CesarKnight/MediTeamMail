@@ -1,40 +1,35 @@
 package lat.mediteam.core;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import lat.mediteam.commands.CommandResponse;
-import lat.mediteam.commands.RootCommand;
+import lat.mediteam.commands.BaseCommands;
 import lat.mediteam.mail.Email;
-import picocli.CommandLine;
-import picocli.CommandLine.ParseResult;
 
 public class RespuestaWorker implements Runnable{
     int id;
     String mailserver;
-    String sender;
     Email parsedEmail;
+    
+    AppContext appContext;
+    BaseCommands parser;
+    Session session;
 
-    CommandLine parser;
-
-    public RespuestaWorker(int id, String server, String rawEmail) {
+    public RespuestaWorker(int id, String server, String rawEmail, AppContext appContext) {
         if (rawEmail == null || rawEmail.isEmpty()) {
             return;
         }
         this.id = id;
         this.mailserver = server;
         parsedEmail = new Email(rawEmail);
-        this.sender = parsedEmail.getRecipient();
+        this.appContext = appContext;
     }
 
     private CommandResponse executeCommand(String command) {
-        String[] tokens = command.split(" ");
-        parser.execute(tokens);
-        ParseResult parseResult = parser.getParseResult();
-        if (parseResult.subcommand() != null) {
-            CommandLine sub = parseResult.subcommand().subcommand().commandSpec().commandLine();
-            
-            CommandResponse respuesta = sub.getExecutionResult();
-            return respuesta;
-        }
-        return new CommandResponse(false, "No existe el comando : " + tokens[0] + " " + tokens[1]);
+        List<String> tokens = new ArrayList<>(List.of(command.split("\\s+")));
+        return parser.execute(appContext, session, tokens);
     }
 
     private void sendEmail(String recipient, String subject, String body) {
@@ -42,67 +37,69 @@ public class RespuestaWorker implements Runnable{
         System.out.println("Enviando correo a " + recipient + " con asunto '" + subject + "' y cuerpo: " + body);
     }
 
-    
 
     @Override
     public void run() {
-        System.out.println("Hilo " + id + " atendiendo a cliente " + sender);
+        System.out.println("Hilo " + id + " atendiendo a cliente " + parsedEmail.getSender());
         if (parsedEmail == null) {
             System.out.println("No se pudo analizar el correo con ID " + id);
             return;
         }
-        parser = new CommandLine(new RootCommand());
-        parser.setCaseInsensitiveEnumValuesAllowed(true);
 
-        // String command = "usuario crear evans@gmail.com 123 medico";
-        // String command = "usuario listar";
-        // String command = "usuario eliminar 202";
-        // String command = "usuario editar 4 eliezer22@gmail.com 123";
-       // String command = "usuario crear maria@gmail.com 123 paciente";
-        // String command = "admin listar";
-        // String command = "admin crear 1 cesar caballero";
-//String command = "usuario crear dr.lopez@gmail.com 123 medico";
-//String command = "usuario listar";
-//String command = "medico crear 3 Dr. Lopez 12345678 Cardiologia 1975-04-10";
-//String command = "servicio crear ConsultaGeneral AtencionPrimaria 100.0 30min DISPONIBLE"
-//String command = "cita crear 2 3 1 2026-06-20 10:00 11:00 RevisionAnual";;
-//String command = "paciente crear 2 Maria Perez 87654321 75512345 maria@gmail.com 1990-03-15";
-    // String command = "servicio crear ConsultaGeneral AtencionPrimaria 100.0 30min DISPONIBLE";   //String command = "usuario crear prueba@gmail.com 123456 MEDICO";
-     // String command = "servicio listar";  
-    // String command = "cita crear 2 3 2 2026-06-20 10:00 11:00 RevisionAnual";
-   // String command = "cita listar";
-    //String command = "cita obtener 1";
-   // String command = "cita reprogramar 1 2026-06-21 11:00 12:00";
-//String command = "cita cancelar 1 PacienteNoPuedeAsistir";
+        try {
+            parser = new BaseCommands();
+            session = appContext.getAuthManager().findByEmail(parsedEmail.getSender());
+            
+            ponerSessiondePrueba(); // todo eliminar en produccion, Pone una sesion ya logeada
 
-//String command = "cita obtener 1";
+            if (session == null) {
+                // session = Session.nonAuthenticated("cesar@gmail.com"); // para probar logeo
+                session = Session.nonAuthenticated(parsedEmail.getSender()); // produccion
+            }
+            
 
-//String command = "cita porpaciente 2";
-String command = "cita pormedico 3";
+            // String command = "usuario crear choco@gmail.com 123 paciente";
+            // String command = "usuario    listar";
+            // String command = "usuario eliminar 202";
+            // String command = "usuario editar 4 eliezer22@gmail.com 123";
+            // String command = "admin listar";
+            // String command = "admin obtener 1";
+            // String command = "admin crear 1 cesar caballero";
+            // String command = "login 123";
+            // String command = "logout";
+            // String command = "paciente crear 2 choquito jimenes 754623 choco@example.com";
+            // String command= "paciente listar";
+            // String command = "paciente eliminar 2";
+            // String command = "tratamiento crear ";
+            // String command = "medico crear 1 cesar caballero 12345678 cardiologia 1990-01-01";
+            // String command = "medico listar";
+            // String command = "historiaclinica crear 1 2024-01-01 pendiente diagnostico";
+            // String command = "historiaclinica listar";
+            
+            // String command = "ayuda";
+            
 
+            CommandResponse response = executeCommand(command);
+            
+            System.out.println("Comando ejecutado exitosamente para usuario " + parsedEmail.getSender());
+            System.out.println(response.getMessage());
+            
+        } catch (Exception e) {
+            String errorMessage = e.getClass().getSimpleName() + ": " + e.getMessage();
+            System.out.println("Error en hilo " + id + ": " + errorMessage);
 
-    //String command = "medico crear 1 Carlos Pinto 9876543 Cardiologia 1985-10-12";
-        //String command = "usuario crear paciente@gmail.com 123456 PACIENTE";
-        //String command = "paciente crear 4 Juan";
-        //String command = "historia crear 4 1 2025-01-01 pendiente diagnostico";
-        //String command = "diagnostico crear 2 Paciente-con-fiebre-alta";
-        //String command = "tratamiento crear 2 Reposo-y-medicacion";
-        //String command = "involucrados asignar 1 2";
-
-        //String command = "historia crear 1 2025-01-01 pendiente diagnostico";
-       // String command = "historia crear 1 2025-01-01 pendiente diagnostico";
-        //String command = "historia crear 1 2025-01-01 pendiente diagnostico";
-
-        CommandResponse response = executeCommand(command);
-        
-        // sendEmail(command, command, command);
-        // Para testeo imprimimos 
-        if (response.isSuccess()) {
-            System.out.println("Comando ejecutado exitosamente para usuario " + sender);
-        } else {
-            System.out.println("Error al ejecutar comando para usuario " + sender);
+            // sendEmail(sender, "Error al procesar comando", errorMessage);
         }
-        System.out.println(response.getMessage());    
     }
 
+    private void ponerSessiondePrueba(){
+        Long pruebaId = 1L;
+        String pruebaEmail = "cesar@gmail.com";
+        Set<String> permisos = Set.of("permiso1", "permiso2"); // todo implementar permisos
+        
+
+        AuthManager authManager = appContext.getAuthManager();
+        authManager.login(pruebaId,pruebaEmail,permisos); // todo implementar permisos
+        session = authManager.findByEmail(pruebaEmail);
+    }
 }

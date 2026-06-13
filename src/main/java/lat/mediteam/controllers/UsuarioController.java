@@ -3,82 +3,67 @@ package lat.mediteam.controllers;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.persistence.EntityNotFoundException;
 import lat.mediteam.models.Usuario;
 import lat.mediteam.services.UsuarioService;
 import lat.mediteam.commands.CommandResponse;
+import lat.mediteam.core.AppContext;
+import lat.mediteam.core.Session;
 import lat.mediteam.enums.UsuarioTipo;
 
 public class UsuarioController {
     
+    private AppContext ctx;
+	private Session session;
     private UsuarioService service;
     
-    public UsuarioController(UsuarioService service){
+    public UsuarioController(AppContext ctx, Session session, UsuarioService service){
+        this.ctx = ctx;
+		this.session = session;
         this.service = service;
     }
 
     public CommandResponse crearUsuario(String email, String password, UsuarioTipo tipo) {
-        try {
-            Usuario nuevoUsuario = service.crear(email, password, tipo);
-            return new CommandResponse(true, "Usuario creado: " + nuevoUsuario.getEmail());
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
-        }
+        Usuario nuevoUsuario = service.crear(email, password, tipo);
+        return new CommandResponse(true, "Usuario creado: " + nuevoUsuario.getEmail());
     }
 
 
     public CommandResponse obtenerUsuario(Long id) {
-        try {
-            Optional<Usuario> usuario = service.obtenerPorId(id);
-            if (usuario.isPresent()) {
-                return new CommandResponse(true, "Usuario: " + usuario.get().getEmail());
-            } else {
-                return new CommandResponse(false, "Usuario no encontrado");
-            }
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
+        Optional<Usuario> u = service.obtenerPorId(id);
+        if(u.isEmpty()) {
+            throw new EntityNotFoundException("Usuario no encontrado: " + id);
         }
+        
+        Usuario usuario = u.get();
+        return new CommandResponse(true, "Usuario: " + usuario.getEmail());
     }
 
     
     public CommandResponse listarUsuarios() {
-        try {
-            List<Usuario> usuarios = service.listar();
-            if (usuarios.isEmpty()) {
-                return new CommandResponse(true, "No hay usuarios");
-            }
-
-            StringBuilder resultado = new StringBuilder();
-            for (Usuario u : usuarios) {
-                if (resultado.length() > 0) {
-                    resultado.append(System.lineSeparator());
-                }
-                resultado.append(u.getId()).append(" - ").append(u.getEmail()).append(" - ").append(u.getTipo());
-            }
-
-            return new CommandResponse(true, resultado.toString());
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
+        List<Usuario> usuarios = service.listar();
+        if (usuarios.isEmpty()) {
+            return new CommandResponse(true, "No hay usuarios");
         }
+
+        StringBuilder resultado = new StringBuilder();
+        for (Usuario u : usuarios) {
+            if (resultado.length() > 0) {
+                resultado.append(System.lineSeparator());
+            }
+            resultado.append(u.getId()).append(" - ").append(u.getEmail()).append(" - ").append(u.getTipo());
+        }
+
+        return new CommandResponse(true, resultado.toString());
     }
 
     public CommandResponse editarUsuario(Long id, String email, String password) {
-        try {
-            Usuario actualizado = service.actualizar(id, email, password);
-            return new CommandResponse(true, "Usuario actualizado: " + actualizado.getEmail());
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
-        }
+        Usuario actualizado = service.actualizar(id, email, password);
+        return new CommandResponse(true, "Usuario actualizado: " + actualizado.getEmail());
     }
 
     public CommandResponse eliminarUsuario(Long id) {
-        try {
-            boolean ok = service.eliminar(id);
-            return ok
-                ? new CommandResponse(true, "Usuario eliminado")
-                : new CommandResponse(false, "Usuario no encontrado");
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
-        }
+        service.eliminar(id);
+        return new CommandResponse(true, "Usuario eliminado");
     }
-
 }

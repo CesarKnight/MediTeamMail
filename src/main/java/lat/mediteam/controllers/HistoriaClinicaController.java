@@ -1,90 +1,133 @@
 package lat.mediteam.controllers;
 
-import lat.mediteam.commands.CommandResponse;
-import lat.mediteam.models.HistoriaClinica;
-import lat.mediteam.services.HistoriaClinicaService;
-
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.persistence.EntityNotFoundException;
+import lat.mediteam.commands.CommandResponse;
+import lat.mediteam.core.AppContext;
+import lat.mediteam.core.Session;
+import lat.mediteam.enums.HistoriaClinicaEstado;
+import lat.mediteam.enums.HistoriaClinicaTipo;
+import lat.mediteam.models.HistoriaClinica;
+import lat.mediteam.services.HistoriaClinicaService;
+
 public class HistoriaClinicaController {
 
+    private AppContext ctx;
+    private Session session;
     private HistoriaClinicaService service;
 
-    public HistoriaClinicaController(HistoriaClinicaService service) {
+    public HistoriaClinicaController(
+            AppContext ctx,
+            Session session,
+            HistoriaClinicaService service) {
+        this.ctx = ctx;
+        this.session = session;
         this.service = service;
     }
 
-    public CommandResponse crearHistoria(Long medicoId, String fecha, String estado, String tipo) {
-        try {
-            HistoriaClinica nueva = service.crear(medicoId, fecha, estado, tipo);
-            return new CommandResponse(true, "Historia clinica creada con id: " + nueva.getId());
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
-        }
+    public CommandResponse crearHistoria(
+            Long medicoId,
+            String fecha,
+            HistoriaClinicaEstado estado,
+            HistoriaClinicaTipo tipo) {
+
+        HistoriaClinica historia = service.crear(
+                medicoId,
+                fecha,
+                estado,
+                tipo);
+
+        return new CommandResponse(
+                true,
+                "Historia clínica creada con id: "
+                        + historia.getId());
     }
 
     public CommandResponse obtenerHistoria(Long id) {
-        try {
-            Optional<HistoriaClinica> historia = service.obtenerPorId(id);
-            if (historia.isPresent()) {
-                HistoriaClinica h = historia.get();
-                return new CommandResponse(true,
-                    "Historia #" + h.getId() +
-                    " - Fecha: " + h.getFecha() +
-                    " - Estado: " + h.getEstado() +
-                    " - Tipo: " + h.getTipo() +
-                    " - Medico ID: " + h.getMedicoCreador().getId());
-            } else {
-                return new CommandResponse(false, "Historia clinica no encontrada");
-            }
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
+
+        Optional<HistoriaClinica> h = service.obtenerPorId(id);
+
+        if (h.isEmpty()) {
+            throw new EntityNotFoundException(
+                    "Historia clínica no encontrada: " + id);
         }
+
+        HistoriaClinica historia = h.get();
+
+        return new CommandResponse(
+                true,
+                historia.getId()
+                        + " - "
+                        + historia.getFecha()
+                        + " - "
+                        + historia.getEstado()
+                        + " - "
+                        + historia.getTipo());
     }
 
     public CommandResponse listarHistorias() {
-        try {
-            List<HistoriaClinica> historias = service.listar();
-            if (historias.isEmpty()) {
-                return new CommandResponse(true, "No hay historias clinicas");
-            }
 
-            StringBuilder resultado = new StringBuilder();
-            for (HistoriaClinica h : historias) {
-                if (resultado.length() > 0) {
-                    resultado.append(System.lineSeparator());
-                }
-                resultado.append(h.getId()).append(" - ")
-                    .append("Fecha: ").append(h.getFecha())
-                    .append(" - Estado: ").append(h.getEstado())
-                    .append(" - Tipo: ").append(h.getTipo())
-                    .append(" - Medico ID: ").append(h.getMedicoCreador().getId());
-            }
+        List<HistoriaClinica> historias = service.listar();
 
-            return new CommandResponse(true, resultado.toString());
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
+        if (historias.isEmpty()) {
+            return new CommandResponse(
+                    true,
+                    "No hay historias clínicas");
         }
+
+        StringBuilder resultado = new StringBuilder();
+
+        for (HistoriaClinica h : historias) {
+
+            if (resultado.length() > 0) {
+                resultado.append(
+                        System.lineSeparator());
+            }
+
+            resultado
+                    .append(h.getId())
+                    .append(" - ")
+                    .append(h.getFecha())
+                    .append(" - ")
+                    .append(h.getEstado())
+                    .append(" - ")
+                    .append(h.getTipo());
+        }
+
+        return new CommandResponse(
+                true,
+                resultado.toString());
     }
 
-    public CommandResponse editarHistoria(Long id, String fecha, String estado, String tipo) {
-        try {
-            HistoriaClinica actualizada = service.actualizar(id, fecha, estado, tipo);
-            return new CommandResponse(true, "Historia clinica actualizada con id: " + actualizada.getId());
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
-        }
+    public CommandResponse editarHistoria(
+            Long id,
+            String fecha,
+            HistoriaClinicaEstado estado,
+            HistoriaClinicaTipo tipo
+        ) 
+    {
+
+        HistoriaClinica historia = service.actualizar(
+            id,
+            fecha,
+            estado,
+            tipo
+        );
+
+        return new CommandResponse(
+            true,
+            "Historia clínica actualizada con id: " + historia.getId()
+        );
     }
 
     public CommandResponse eliminarHistoria(Long id) {
-        try {
-            boolean ok = service.eliminar(id);
-            return ok
-                ? new CommandResponse(true, "Historia clinica eliminada")
-                : new CommandResponse(false, "Historia clinica no encontrada");
-        } catch (Exception e) {
-            return new CommandResponse(false, e.getMessage());
-        }
+
+        service.eliminar(id);
+
+        return new CommandResponse(
+                true,
+                "Historia clínica eliminada");
     }
 }

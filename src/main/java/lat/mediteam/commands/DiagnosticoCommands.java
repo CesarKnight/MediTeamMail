@@ -1,86 +1,170 @@
 package lat.mediteam.commands;
 
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Parameters;
+import java.util.List;
 
 import lat.mediteam.controllers.DiagnosticoController;
+import lat.mediteam.core.AppContext;
+import lat.mediteam.core.Session;
+import lat.mediteam.exceptions.InvalidArgumentException;
 import lat.mediteam.services.DiagnosticoService;
 
-import java.util.concurrent.Callable;
+public class DiagnosticoCommands implements Command {
 
-@Command(
-    name = "diagnostico",
-    description = "Gestion de diagnosticos",
-    subcommands = {
-        DiagnosticoCommands.Crear.class,
-        DiagnosticoCommands.Obtener.class,
-        DiagnosticoCommands.Listar.class,
-        DiagnosticoCommands.Editar.class,
-        DiagnosticoCommands.Eliminar.class
-    }
-)
-public class DiagnosticoCommands {
+    private AppContext ctx;
+    private Session session;
 
-    @Command(name = "crear")
-    static class Crear implements Callable<CommandResponse> {
-        @Parameters(index = "0")
-        Long historiaId;
+    @Override
+    public CommandResponse execute(
+            AppContext ctx,
+            Session session,
+            List<String> args) {
 
-        @Parameters(index = "1")
-        String diagnostico;
+        if (args.isEmpty()) {
+            throw new InvalidArgumentException(
+                    "No se proporcionó ningún subcomando para 'diagnostico'");
+        }
 
-        @Override
-        public CommandResponse call() {
-            DiagnosticoController controller = new DiagnosticoController(new DiagnosticoService());
-            return controller.crearDiagnostico(historiaId, diagnostico);
+        this.ctx = ctx;
+        this.session = session;
+
+        String subCommand = args.remove(0).toLowerCase();
+
+        switch (subCommand) {
+
+            case "crear":
+                return crear(args);
+
+            case "obtener":
+                return obtener(args);
+
+            case "listar":
+                return listar(args);
+
+            case "editar":
+                return editar(args);
+
+            case "eliminar":
+                return eliminar(args);
+
+            default:
+                throw new InvalidArgumentException(
+                        "Subcomando de diagnostico inválido: "
+                                + subCommand);
         }
     }
 
-    @Command(name = "obtener")
-    static class Obtener implements Callable<CommandResponse> {
-        @Parameters(index = "0")
-        Long id;
-
-        @Override
-        public CommandResponse call() {
-            DiagnosticoController controller = new DiagnosticoController(new DiagnosticoService());
-            return controller.obtenerDiagnostico(id);
-        }
+    @Override
+    public String getHelp() {
+        return "Comandos de diagnóstico:\n"
+                + "  diagnostico crear <historiaId> <diagnostico>\n"
+                + "  diagnostico obtener <id>\n"
+                + "  diagnostico listar\n"
+                + "  diagnostico editar <id> <diagnostico>\n"
+                + "  diagnostico eliminar <id>";
     }
 
-    @Command(name = "listar")
-    static class Listar implements Callable<CommandResponse> {
-        @Override
-        public CommandResponse call() {
-            DiagnosticoController controller = new DiagnosticoController(new DiagnosticoService());
-            return controller.listarDiagnosticos();
+    private CommandResponse crear(List<String> args) {
+
+        if (args.size() != 2) {
+            throw new InvalidArgumentException(
+                    "Argumentos erróneos para 'crear'. "
+                            + "Se requieren 2 argumentos: "
+                            + "<historiaId> <diagnostico>");
         }
+
+        Long historiaId = parseId(args.get(0));
+        String diagnostico = args.get(1);
+
+        DiagnosticoController controller = new DiagnosticoController(
+                ctx,
+                session,
+                new DiagnosticoService());
+
+        return controller.crearDiagnostico(
+                historiaId,
+                diagnostico);
     }
 
-    @Command(name = "editar")
-    static class Editar implements Callable<CommandResponse> {
-        @Parameters(index = "0")
-        Long id;
+    private CommandResponse obtener(List<String> args) {
 
-        @Parameters(index = "1")
-        String diagnostico;
-
-        @Override
-        public CommandResponse call() {
-            DiagnosticoController controller = new DiagnosticoController(new DiagnosticoService());
-            return controller.editarDiagnostico(id, diagnostico);
+        if (args.size() != 1) {
+            throw new InvalidArgumentException(
+                    "Argumentos erróneos para 'obtener'. "
+                            + "Se requiere 1 argumento: <id>");
         }
+
+        Long id = parseId(args.get(0));
+
+        DiagnosticoController controller = new DiagnosticoController(
+                ctx,
+                session,
+                new DiagnosticoService());
+
+        return controller.obtenerDiagnostico(id);
     }
 
-    @Command(name = "eliminar")
-    static class Eliminar implements Callable<CommandResponse> {
-        @Parameters(index = "0")
-        Long id;
+    private CommandResponse listar(List<String> args) {
 
-        @Override
-        public CommandResponse call() {
-            DiagnosticoController controller = new DiagnosticoController(new DiagnosticoService());
-            return controller.eliminarDiagnostico(id);
+        if (!args.isEmpty()) {
+            throw new InvalidArgumentException(
+                    "Argumentos erróneos para 'listar'. "
+                            + "No se requieren argumentos.");
+        }
+
+        DiagnosticoController controller = new DiagnosticoController(
+                ctx,
+                session,
+                new DiagnosticoService());
+
+        return controller.listarDiagnosticos();
+    }
+
+    private CommandResponse editar(List<String> args) {
+
+        if (args.size() != 2) {
+            throw new InvalidArgumentException(
+                    "Argumentos erróneos para 'editar'. "
+                            + "Se requieren 2 argumentos: "
+                            + "<id> <diagnostico>");
+        }
+
+        Long id = parseId(args.get(0));
+        String diagnostico = args.get(1);
+
+        DiagnosticoController controller = new DiagnosticoController(
+                ctx,
+                session,
+                new DiagnosticoService());
+
+        return controller.editarDiagnostico(
+                id,
+                diagnostico);
+    }
+
+    private CommandResponse eliminar(List<String> args) {
+
+        if (args.size() != 1) {
+            throw new InvalidArgumentException(
+                    "Argumentos erróneos para 'eliminar'. "
+                            + "Se requiere 1 argumento: <id>");
+        }
+
+        Long id = parseId(args.get(0));
+
+        DiagnosticoController controller = new DiagnosticoController(
+                ctx,
+                session,
+                new DiagnosticoService());
+
+        return controller.eliminarDiagnostico(id);
+    }
+
+    private Long parseId(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new InvalidArgumentException(
+                    "ID inválido: " + value);
         }
     }
 }

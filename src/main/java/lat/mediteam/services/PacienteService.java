@@ -1,13 +1,15 @@
 package lat.mediteam.services;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.EntityTransaction;
 import lat.mediteam.core.DatabaseManager;
 import lat.mediteam.enums.UsuarioTipo;
+import lat.mediteam.exceptions.InvalidArgumentException;
+import lat.mediteam.exceptions.ServiceException;
 import lat.mediteam.models.Paciente;
 import lat.mediteam.models.Usuario;
 
@@ -30,11 +32,11 @@ public class PacienteService {
             Usuario usuario = entityManager.find(Usuario.class, usuarioId);
 
             if (usuario == null) {
-                throw new NoSuchElementException("No existe un usuario con id " + usuarioId);
+                throw new EntityNotFoundException("No existe un usuario con id " + usuarioId);
             }
 
             if (usuario.getTipo() != UsuarioTipo.PACIENTE) {
-                throw new IllegalArgumentException("El usuario con id " + usuarioId + " no es de tipo PACIENTE");
+                throw new InvalidArgumentException("El usuario con id " + usuarioId + " no es de tipo PACIENTE");
             }
 
             Paciente paciente = new Paciente(nombre, apellido, ci,
@@ -46,10 +48,12 @@ public class PacienteService {
 
             return paciente;
 
+        } catch (EntityNotFoundException | InvalidArgumentException e) {
+            if (transaction.isActive()) transaction.rollback();
+            throw e;
         } catch (RuntimeException e) {
             if (transaction.isActive()) transaction.rollback();
-            if (e instanceof NoSuchElementException || e instanceof IllegalArgumentException) throw e;
-            throw new IllegalStateException("No se pudo crear el paciente", e);
+            throw new ServiceException("No se pudo crear el paciente", e);
         } finally {
             if (entityManager.isOpen()) entityManager.close();
         }
@@ -60,7 +64,7 @@ public class PacienteService {
         try {
             return Optional.ofNullable(entityManager.find(Paciente.class, id));
         } catch (RuntimeException e) {
-            throw new IllegalStateException("No se pudo obtener el paciente", e);
+            throw new ServiceException("No se pudo obtener el paciente", e);
         } finally {
             if (entityManager.isOpen()) entityManager.close();
         }
@@ -73,7 +77,7 @@ public class PacienteService {
                 .createQuery("SELECT p FROM Paciente p", Paciente.class)
                 .getResultList();
         } catch (RuntimeException e) {
-            throw new IllegalStateException("No se pudieron listar los pacientes", e);
+            throw new ServiceException("No se pudieron listar los pacientes", e);
         } finally {
             if (entityManager.isOpen()) entityManager.close();
         }
@@ -82,8 +86,8 @@ public class PacienteService {
     public Paciente actualizar(Long id, String nombre, String apellido,
                                String telefono, String email) {
 
-        if (nombre == null || nombre.isBlank()) throw new IllegalArgumentException("El nombre es obligatorio");
-        if (apellido == null || apellido.isBlank()) throw new IllegalArgumentException("El apellido es obligatorio");
+        if (nombre == null || nombre.isBlank()) throw new InvalidArgumentException("El nombre es obligatorio");
+        if (apellido == null || apellido.isBlank()) throw new InvalidArgumentException("El apellido es obligatorio");
 
         EntityManager entityManager = crearEntityManager();
         EntityTransaction transaction = entityManager.getTransaction();
@@ -91,7 +95,9 @@ public class PacienteService {
         try {
             Paciente paciente = entityManager.find(Paciente.class, id);
 
-            if (paciente == null) throw new NoSuchElementException("No existe un paciente con id " + id);
+            if (paciente == null) {
+                throw new EntityNotFoundException("No existe un paciente con id " + id);
+            }
 
             transaction.begin();
             paciente.setNombre(nombre);
@@ -103,10 +109,12 @@ public class PacienteService {
 
             return paciente;
 
+        } catch (EntityNotFoundException | InvalidArgumentException e) {
+            if (transaction.isActive()) transaction.rollback();
+            throw e;
         } catch (RuntimeException e) {
             if (transaction.isActive()) transaction.rollback();
-            if (e instanceof NoSuchElementException || e instanceof IllegalArgumentException) throw e;
-            throw new IllegalStateException("No se pudo actualizar el paciente", e);
+            throw new ServiceException("No se pudo actualizar el paciente", e);
         } finally {
             if (entityManager.isOpen()) entityManager.close();
         }
@@ -118,7 +126,10 @@ public class PacienteService {
 
         try {
             Paciente paciente = entityManager.find(Paciente.class, id);
-            if (paciente == null) return false;
+
+            if (paciente == null) {
+                throw new EntityNotFoundException("No existe un paciente con id " + id);
+            }
 
             transaction.begin();
             entityManager.remove(entityManager.contains(paciente) ? paciente : entityManager.merge(paciente));
@@ -126,9 +137,12 @@ public class PacienteService {
 
             return true;
 
+        } catch (EntityNotFoundException e) {
+            if (transaction.isActive()) transaction.rollback();
+            throw e;
         } catch (RuntimeException e) {
             if (transaction.isActive()) transaction.rollback();
-            throw new IllegalStateException("No se pudo eliminar el paciente", e);
+            throw new ServiceException("No se pudo eliminar el paciente", e);
         } finally {
             if (entityManager.isOpen()) entityManager.close();
         }
@@ -136,12 +150,12 @@ public class PacienteService {
 
     private void validarDatos(Long usuarioId, String nombre, String apellido, String ci) {
         if (usuarioId == null || usuarioId <= 0)
-            throw new IllegalArgumentException("El id de usuario es obligatorio");
+            throw new InvalidArgumentException("El id de usuario es obligatorio");
         if (nombre == null || nombre.isBlank())
-            throw new IllegalArgumentException("El nombre es obligatorio");
+            throw new InvalidArgumentException("El nombre es obligatorio");
         if (apellido == null || apellido.isBlank())
-            throw new IllegalArgumentException("El apellido es obligatorio");
+            throw new InvalidArgumentException("El apellido es obligatorio");
         if (ci == null || ci.isBlank())
-            throw new IllegalArgumentException("El CI es obligatorio");
+            throw new InvalidArgumentException("El CI es obligatorio");
     }
 }

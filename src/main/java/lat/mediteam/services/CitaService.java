@@ -1,15 +1,16 @@
 package lat.mediteam.services;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import jakarta.persistence.NoResultException;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.NoResultException;
 import lat.mediteam.core.DatabaseManager;
 import lat.mediteam.enums.CitaEstado;
+import lat.mediteam.exceptions.InvalidArgumentException;
+import lat.mediteam.exceptions.ServiceException;
 import lat.mediteam.models.Cita;
 import lat.mediteam.models.Medico;
 import lat.mediteam.models.Paciente;
@@ -33,17 +34,16 @@ public class CitaService {
         try {
             Paciente paciente = entityManager.find(Paciente.class, pacienteId);
             if (paciente == null)
-                throw new NoSuchElementException("No existe un paciente con id " + pacienteId);
+                throw new EntityNotFoundException("No existe un paciente con id " + pacienteId);
 
             Medico medico = entityManager.find(Medico.class, medicoId);
             if (medico == null)
-                throw new NoSuchElementException("No existe un médico con id " + medicoId);
+                throw new EntityNotFoundException("No existe un médico con id " + medicoId);
 
             Servicio servicio = entityManager.find(Servicio.class, servicioId);
             if (servicio == null)
-                throw new NoSuchElementException("No existe un servicio con id " + servicioId);
+                throw new EntityNotFoundException("No existe un servicio con id " + servicioId);
 
-            // Verificar cruce de horario para el médico
             List<Cita> citasExistentes = entityManager
                 .createQuery(
                     "SELECT c FROM Cita c WHERE c.medico.id = :medicoId " +
@@ -58,11 +58,10 @@ public class CitaService {
                 .setParameter("horaFin", horaFin)
                 .getResultList();
 
-            if (!citasExistentes.isEmpty()) {
-                throw new IllegalStateException(
+            if (!citasExistentes.isEmpty())
+                throw new ServiceException(
                     "El médico ya tiene una cita programada en ese horario: "
                     + fecha + " " + horaInicio + " - " + horaFin);
-            }
 
             Cita cita = new Cita(paciente, medico, servicio,
                                   fecha, horaInicio, horaFin, motivo);
@@ -73,39 +72,35 @@ public class CitaService {
 
             return cita;
 
+        } catch (EntityNotFoundException | InvalidArgumentException | ServiceException e) {
+            if (transaction.isActive()) transaction.rollback();
+            throw e;
         } catch (RuntimeException e) {
             if (transaction.isActive()) transaction.rollback();
-            if (e instanceof NoSuchElementException ||
-                e instanceof IllegalStateException ||
-                e instanceof IllegalArgumentException) throw e;
-            throw new IllegalStateException("No se pudo crear la cita", e);
+            throw new ServiceException("No se pudo crear la cita", e);
         } finally {
             if (entityManager.isOpen()) entityManager.close();
         }
     }
 
-        public Optional<Cita> obtenerPorId(Long id) {
+    public Optional<Cita> obtenerPorId(Long id) {
         EntityManager entityManager = crearEntityManager();
         try {
-            try {
-                Cita cita = entityManager.createQuery(
-                        "SELECT c FROM Cita c " +
-                        "JOIN FETCH c.paciente " +
-                        "JOIN FETCH c.medico " +
-                        "JOIN FETCH c.servicio " +
-                        "WHERE c.id = :id", Cita.class)
-                    .setParameter("id", id)
-                    .getSingleResult();
-                return Optional.of(cita);
-            } catch (NoResultException e) {
-                return Optional.empty();
-            }
+            Cita cita = entityManager.createQuery(
+                    "SELECT c FROM Cita c " +
+                    "JOIN FETCH c.paciente " +
+                    "JOIN FETCH c.medico " +
+                    "JOIN FETCH c.servicio " +
+                    "WHERE c.id = :id", Cita.class)
+                .setParameter("id", id)
+                .getSingleResult();
+            return Optional.of(cita);
+        } catch (NoResultException e) {
+            return Optional.empty();
         } catch (RuntimeException e) {
-            throw new IllegalStateException("No se pudo obtener la cita", e);
+            throw new ServiceException("No se pudo obtener la cita", e);
         } finally {
-            if (entityManager.isOpen()) {
-                entityManager.close();
-            }
+            if (entityManager.isOpen()) entityManager.close();
         }
     }
 
@@ -113,14 +108,14 @@ public class CitaService {
         EntityManager entityManager = crearEntityManager();
         try {
             return entityManager
-    .createQuery(
-        "SELECT c FROM Cita c " +
-        "JOIN FETCH c.paciente " +
-        "JOIN FETCH c.medico " +
-        "JOIN FETCH c.servicio", Cita.class)
-    .getResultList();
+                .createQuery(
+                    "SELECT c FROM Cita c " +
+                    "JOIN FETCH c.paciente " +
+                    "JOIN FETCH c.medico " +
+                    "JOIN FETCH c.servicio", Cita.class)
+                .getResultList();
         } catch (RuntimeException e) {
-            throw new IllegalStateException("No se pudieron listar las citas", e);
+            throw new ServiceException("No se pudieron listar las citas", e);
         } finally {
             if (entityManager.isOpen()) entityManager.close();
         }
@@ -130,16 +125,16 @@ public class CitaService {
         EntityManager entityManager = crearEntityManager();
         try {
             return entityManager
-    .createQuery(
-        "SELECT c FROM Cita c " +
-        "JOIN FETCH c.paciente " +
-        "JOIN FETCH c.medico " +
-        "JOIN FETCH c.servicio " +
-        "WHERE c.paciente.id = :id", Cita.class)
-    .setParameter("id", pacienteId)
-    .getResultList();
+                .createQuery(
+                    "SELECT c FROM Cita c " +
+                    "JOIN FETCH c.paciente " +
+                    "JOIN FETCH c.medico " +
+                    "JOIN FETCH c.servicio " +
+                    "WHERE c.paciente.id = :id", Cita.class)
+                .setParameter("id", pacienteId)
+                .getResultList();
         } catch (RuntimeException e) {
-            throw new IllegalStateException("No se pudieron listar las citas", e);
+            throw new ServiceException("No se pudieron listar las citas del paciente", e);
         } finally {
             if (entityManager.isOpen()) entityManager.close();
         }
@@ -148,17 +143,17 @@ public class CitaService {
     public List<Cita> listarPorMedico(Long medicoId) {
         EntityManager entityManager = crearEntityManager();
         try {
-           return entityManager
-    .createQuery(
-        "SELECT c FROM Cita c " +
-        "JOIN FETCH c.paciente " +
-        "JOIN FETCH c.medico " +
-        "JOIN FETCH c.servicio " +
-        "WHERE c.medico.id = :id", Cita.class)
-    .setParameter("id", medicoId)
-    .getResultList();
+            return entityManager
+                .createQuery(
+                    "SELECT c FROM Cita c " +
+                    "JOIN FETCH c.paciente " +
+                    "JOIN FETCH c.medico " +
+                    "JOIN FETCH c.servicio " +
+                    "WHERE c.medico.id = :id", Cita.class)
+                .setParameter("id", medicoId)
+                .getResultList();
         } catch (RuntimeException e) {
-            throw new IllegalStateException("No se pudieron listar las citas", e);
+            throw new ServiceException("No se pudieron listar las citas del médico", e);
         } finally {
             if (entityManager.isOpen()) entityManager.close();
         }
@@ -168,11 +163,11 @@ public class CitaService {
                              String nuevaHoraInicio, String nuevaHoraFin) {
 
         if (nuevaFecha == null || nuevaFecha.isBlank())
-            throw new IllegalArgumentException("La nueva fecha es obligatoria");
+            throw new InvalidArgumentException("La nueva fecha es obligatoria");
         if (nuevaHoraInicio == null || nuevaHoraInicio.isBlank())
-            throw new IllegalArgumentException("La nueva hora de inicio es obligatoria");
+            throw new InvalidArgumentException("La nueva hora de inicio es obligatoria");
         if (nuevaHoraFin == null || nuevaHoraFin.isBlank())
-            throw new IllegalArgumentException("La nueva hora de fin es obligatoria");
+            throw new InvalidArgumentException("La nueva hora de fin es obligatoria");
 
         EntityManager entityManager = crearEntityManager();
         EntityTransaction transaction = entityManager.getTransaction();
@@ -180,12 +175,11 @@ public class CitaService {
         try {
             Cita cita = entityManager.find(Cita.class, id);
             if (cita == null)
-                throw new NoSuchElementException("No existe una cita con id " + id);
+                throw new EntityNotFoundException("No existe una cita con id " + id);
 
             if (cita.getEstado() == CitaEstado.CANCELADA)
-                throw new IllegalStateException("No se puede reprogramar una cita cancelada");
+                throw new ServiceException("No se puede reprogramar una cita cancelada");
 
-            // Verificar cruce en el nuevo horario
             List<Cita> citasExistentes = entityManager
                 .createQuery(
                     "SELECT c FROM Cita c WHERE c.medico.id = :medicoId " +
@@ -202,7 +196,7 @@ public class CitaService {
                 .getResultList();
 
             if (!citasExistentes.isEmpty())
-                throw new IllegalStateException(
+                throw new ServiceException(
                     "El médico ya tiene una cita en ese horario: "
                     + nuevaFecha + " " + nuevaHoraInicio + " - " + nuevaHoraFin);
 
@@ -216,12 +210,12 @@ public class CitaService {
 
             return cita;
 
+        } catch (EntityNotFoundException | InvalidArgumentException | ServiceException e) {
+            if (transaction.isActive()) transaction.rollback();
+            throw e;
         } catch (RuntimeException e) {
             if (transaction.isActive()) transaction.rollback();
-            if (e instanceof NoSuchElementException ||
-                e instanceof IllegalStateException ||
-                e instanceof IllegalArgumentException) throw e;
-            throw new IllegalStateException("No se pudo reprogramar la cita", e);
+            throw new ServiceException("No se pudo reprogramar la cita", e);
         } finally {
             if (entityManager.isOpen()) entityManager.close();
         }
@@ -234,10 +228,10 @@ public class CitaService {
         try {
             Cita cita = entityManager.find(Cita.class, id);
             if (cita == null)
-                throw new NoSuchElementException("No existe una cita con id " + id);
+                throw new EntityNotFoundException("No existe una cita con id " + id);
 
             if (cita.getEstado() == CitaEstado.CANCELADA)
-                throw new IllegalStateException("La cita ya está cancelada");
+                throw new ServiceException("La cita ya está cancelada");
 
             transaction.begin();
             cita.setEstado(CitaEstado.CANCELADA);
@@ -247,11 +241,12 @@ public class CitaService {
 
             return cita;
 
+        } catch (EntityNotFoundException | ServiceException e) {
+            if (transaction.isActive()) transaction.rollback();
+            throw e;
         } catch (RuntimeException e) {
             if (transaction.isActive()) transaction.rollback();
-            if (e instanceof NoSuchElementException ||
-                e instanceof IllegalStateException) throw e;
-            throw new IllegalStateException("No se pudo cancelar la cita", e);
+            throw new ServiceException("No se pudo cancelar la cita", e);
         } finally {
             if (entityManager.isOpen()) entityManager.close();
         }
@@ -260,16 +255,16 @@ public class CitaService {
     private void validarDatos(Long pacienteId, Long medicoId, Long servicioId,
                                String fecha, String horaInicio, String horaFin) {
         if (pacienteId == null || pacienteId <= 0)
-            throw new IllegalArgumentException("El id de paciente es obligatorio");
+            throw new InvalidArgumentException("El id de paciente es obligatorio");
         if (medicoId == null || medicoId <= 0)
-            throw new IllegalArgumentException("El id de médico es obligatorio");
+            throw new InvalidArgumentException("El id de médico es obligatorio");
         if (servicioId == null || servicioId <= 0)
-            throw new IllegalArgumentException("El id de servicio es obligatorio");
+            throw new InvalidArgumentException("El id de servicio es obligatorio");
         if (fecha == null || fecha.isBlank())
-            throw new IllegalArgumentException("La fecha es obligatoria");
+            throw new InvalidArgumentException("La fecha es obligatoria");
         if (horaInicio == null || horaInicio.isBlank())
-            throw new IllegalArgumentException("La hora de inicio es obligatoria");
+            throw new InvalidArgumentException("La hora de inicio es obligatoria");
         if (horaFin == null || horaFin.isBlank())
-            throw new IllegalArgumentException("La hora de fin es obligatoria");
+            throw new InvalidArgumentException("La hora de fin es obligatoria");
     }
 }

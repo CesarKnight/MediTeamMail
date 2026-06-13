@@ -15,7 +15,7 @@ public class Tratamiento {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @Getter
-    @Setter
+    @Setter     
     private String tratamiento;
 
     @ManyToOne

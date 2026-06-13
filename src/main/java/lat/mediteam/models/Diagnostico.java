@@ -24,7 +24,8 @@ public class Diagnostico {
     @Setter
     private HistoriaClinica historia;
 
-    protected Diagnostico() {}
+    protected Diagnostico() {
+    }
 
     public Diagnostico(String diagnostico, HistoriaClinica historia) {
         this.diagnostico = diagnostico;

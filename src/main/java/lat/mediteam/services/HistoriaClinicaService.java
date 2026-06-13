@@ -1,16 +1,19 @@
 package lat.mediteam.services;
 
+import java.util.List;
+import java.util.Optional;
+
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.EntityTransaction;
+
 import lat.mediteam.core.DatabaseManager;
 import lat.mediteam.enums.HistoriaClinicaEstado;
 import lat.mediteam.enums.HistoriaClinicaTipo;
+import lat.mediteam.exceptions.InvalidArgumentException;
+import lat.mediteam.exceptions.ServiceException;
 import lat.mediteam.models.HistoriaClinica;
 import lat.mediteam.models.Medico;
-
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 public class HistoriaClinicaService {
 
@@ -18,165 +21,224 @@ public class HistoriaClinicaService {
         return DatabaseManager.getEntityManager();
     }
 
-    public HistoriaClinica crear(Long medicoId, String fecha, String estado, String tipo) {
-        validarDatos(medicoId, fecha, estado, tipo);
+    public HistoriaClinica crear(
+            Long medicoId,
+            String fecha,
+            HistoriaClinicaEstado estado,
+            HistoriaClinicaTipo tipo) {
 
-        EntityManager entityManager = crearEntityManager();
-        EntityTransaction transaction = entityManager.getTransaction();
+        validarDatos(fecha);
+
+        EntityManager em = crearEntityManager();
+        EntityTransaction tx = em.getTransaction();
 
         try {
-            Medico medico = entityManager.find(Medico.class, medicoId);
+
+            Medico medico = em.find(Medico.class, medicoId);
+
             if (medico == null) {
-                throw new NoSuchElementException("No existe un medico con id " + medicoId);
+                throw new EntityNotFoundException(
+                        "Médico no encontrado: "
+                                + medicoId);
             }
 
             HistoriaClinica historia = new HistoriaClinica(
-                fecha,
-                HistoriaClinicaEstado.valueOf(estado.toLowerCase()),
-                HistoriaClinicaTipo.valueOf(tipo.toLowerCase()),
-                medico
-            );
+                    fecha,
+                    estado,
+                    tipo,
+                    medico);
 
-            transaction.begin();
-            entityManager.persist(historia);
-            transaction.commit();
+            tx.begin();
+            em.persist(historia);
+            tx.commit();
 
             return historia;
-        } catch (RuntimeException exception) {
-            if (transaction.isActive()) {
-                transaction.rollback();
+
+        } catch (RuntimeException ex) {
+
+            if (tx.isActive()) {
+                tx.rollback();
             }
-            if (exception instanceof NoSuchElementException) {
-                throw exception;
+
+            if (ex instanceof EntityNotFoundException) {
+                throw ex;
             }
-            throw new IllegalStateException("No se pudo crear la historia clinica", exception);
+
+            throw new ServiceException(
+                    "No se pudo crear la historia clínica",
+                    ex);
+
         } finally {
-            if (entityManager.isOpen()) {
-                entityManager.close();
+            if (em.isOpen()) {
+                em.close();
             }
         }
     }
 
     public Optional<HistoriaClinica> obtenerPorId(Long id) {
-        EntityManager entityManager = crearEntityManager();
+
+        EntityManager em = crearEntityManager();
 
         try {
-            return Optional.ofNullable(entityManager.find(HistoriaClinica.class, id));
-        } catch (RuntimeException exception) {
-            throw new IllegalStateException("No se pudo obtener la historia clinica", exception);
+
+            HistoriaClinica historia = em.find(
+                    HistoriaClinica.class,
+                    id);
+
+            if (historia == null) {
+                throw new EntityNotFoundException(
+                        "Historia clínica no encontrada: "
+                                + id);
+            }
+
+            return Optional.of(historia);
+
         } finally {
-            if (entityManager.isOpen()) {
-                entityManager.close();
+
+            if (em.isOpen()) {
+                em.close();
             }
         }
     }
 
     public List<HistoriaClinica> listar() {
-        EntityManager entityManager = crearEntityManager();
+
+        EntityManager em = crearEntityManager();
 
         try {
-            return entityManager
-                .createQuery("SELECT h FROM HistoriaClinica h", HistoriaClinica.class)
-                .getResultList();
-        } catch (RuntimeException exception) {
-            throw new IllegalStateException("No se pudieron listar las historias clinicas", exception);
+
+            return em.createQuery(
+                    "SELECT h FROM HistoriaClinica h",
+                    HistoriaClinica.class).getResultList();
+
+        } catch (RuntimeException ex) {
+
+            throw new ServiceException(
+                    "No se pudieron listar las historias clínicas",
+                    ex);
+
         } finally {
-            if (entityManager.isOpen()) {
-                entityManager.close();
+
+            if (em.isOpen()) {
+                em.close();
             }
         }
     }
 
-    public HistoriaClinica actualizar(Long id, String fecha, String estado, String tipo) {
-        validarCampos(fecha, estado, tipo);
+    public HistoriaClinica actualizar(
+            Long id,
+            String fecha,
+            HistoriaClinicaEstado estado,
+            HistoriaClinicaTipo tipo) {
 
-        EntityManager entityManager = crearEntityManager();
-        EntityTransaction transaction = entityManager.getTransaction();
+        validarDatos(fecha);
+
+        EntityManager em = crearEntityManager();
+
+        EntityTransaction tx = em.getTransaction();
 
         try {
-            HistoriaClinica historia = entityManager.find(HistoriaClinica.class, id);
+
+            HistoriaClinica historia = em.find(
+                    HistoriaClinica.class,
+                    id);
 
             if (historia == null) {
-                throw new NoSuchElementException("No existe una historia clinica con id " + id);
+                throw new EntityNotFoundException(
+                        "Historia clínica no encontrada: "
+                                + id);
             }
 
-            transaction.begin();
+            tx.begin();
+
             historia.setFecha(fecha);
-            historia.setEstado(HistoriaClinicaEstado.valueOf(estado.toLowerCase()));
-            historia.setTipo(HistoriaClinicaTipo.valueOf(tipo.toLowerCase()));
-            historia = entityManager.merge(historia);
-            transaction.commit();
+            historia.setEstado(estado);
+            historia.setTipo(tipo);
+
+            historia = em.merge(historia);
+
+            tx.commit();
 
             return historia;
-        } catch (RuntimeException exception) {
-            if (transaction.isActive()) {
-                transaction.rollback();
+
+        } catch (RuntimeException ex) {
+
+            if (tx.isActive()) {
+                tx.rollback();
             }
-            if (exception instanceof NoSuchElementException) {
-                throw exception;
+
+            if (ex instanceof EntityNotFoundException) {
+                throw ex;
             }
-            throw new IllegalStateException("No se pudo actualizar la historia clinica", exception);
+
+            throw new ServiceException(
+                    "No se pudo actualizar la historia clínica",
+                    ex);
+
         } finally {
-            if (entityManager.isOpen()) {
-                entityManager.close();
+
+            if (em.isOpen()) {
+                em.close();
             }
         }
     }
 
     public boolean eliminar(Long id) {
-        EntityManager entityManager = crearEntityManager();
-        EntityTransaction transaction = entityManager.getTransaction();
+
+        EntityManager em = crearEntityManager();
+
+        EntityTransaction tx = em.getTransaction();
 
         try {
-            HistoriaClinica historia = entityManager.find(HistoriaClinica.class, id);
+
+            HistoriaClinica historia = em.find(
+                    HistoriaClinica.class,
+                    id);
 
             if (historia == null) {
-                return false;
+                throw new EntityNotFoundException(
+                        "Historia clínica no encontrada: "
+                                + id);
             }
 
-            transaction.begin();
-            entityManager.remove(entityManager.contains(historia) ? historia : entityManager.merge(historia));
-            transaction.commit();
+            tx.begin();
+
+            em.remove(
+                    em.contains(historia)
+                            ? historia
+                            : em.merge(historia));
+
+            tx.commit();
 
             return true;
-        } catch (RuntimeException exception) {
-            if (transaction.isActive()) {
-                transaction.rollback();
+
+        } catch (RuntimeException ex) {
+
+            if (tx.isActive()) {
+                tx.rollback();
             }
-            throw new IllegalStateException("No se pudo eliminar la historia clinica", exception);
+
+            if (ex instanceof EntityNotFoundException) {
+                throw ex;
+            }
+
+            throw new ServiceException(
+                    "No se pudo eliminar la historia clínica",
+                    ex);
+
         } finally {
-            if (entityManager.isOpen()) {
-                entityManager.close();
+
+            if (em.isOpen()) {
+                em.close();
             }
         }
     }
 
-    private void validarDatos(Long medicoId, String fecha, String estado, String tipo) {
-        if (medicoId == null || medicoId <= 0) {
-            throw new IllegalArgumentException("El id de medico es obligatorio");
-        }
-        validarCampos(fecha, estado, tipo);
-    }
+    private void validarDatos(String fecha) {
 
-    private void validarCampos(String fecha, String estado, String tipo) {
         if (fecha == null || fecha.isBlank()) {
-            throw new IllegalArgumentException("La fecha es obligatoria");
-        }
-        if (estado == null || estado.isBlank()) {
-            throw new IllegalArgumentException("El estado es obligatorio");
-        }
-        if (tipo == null || tipo.isBlank()) {
-            throw new IllegalArgumentException("El tipo es obligatorio");
-        }
-        try {
-            HistoriaClinicaEstado.valueOf(estado.toLowerCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Estado invalido. Debe ser: pendiente, anulado o aprobado");
-        }
-        try {
-            HistoriaClinicaTipo.valueOf(tipo.toLowerCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Tipo invalido. Debe ser: diagnostico o tratamiento");
+            throw new InvalidArgumentException(
+                    "La fecha es obligatoria");
         }
     }
 }

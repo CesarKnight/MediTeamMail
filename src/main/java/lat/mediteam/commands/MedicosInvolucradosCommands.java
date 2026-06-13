@@ -1,50 +1,105 @@
 package lat.mediteam.commands;
 
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Parameters;
+import java.util.List;
 
 import lat.mediteam.controllers.MedicosInvolucradosController;
+import lat.mediteam.core.AppContext;
+import lat.mediteam.core.Session;
+import lat.mediteam.exceptions.InvalidArgumentException;
 import lat.mediteam.services.MedicosInvolucradosService;
 
-import java.util.concurrent.Callable;
+public class MedicosInvolucradosCommands implements Command {
 
-@Command(
-    name = "involucrados",
-    description = "Asignar o remover medicos a historias clinicas",
-    subcommands = {
-        MedicosInvolucradosCommands.Asignar.class,
-        MedicosInvolucradosCommands.Remover.class
-    }
-)
-public class MedicosInvolucradosCommands {
+    private AppContext ctx;
+    private Session session;
 
-    @Command(name = "asignar")
-    static class Asignar implements Callable<CommandResponse> {
-        @Parameters(index = "0")
-        Long medicoId;
+    @Override
+    public CommandResponse execute(
+            AppContext ctx,
+            Session session,
+            List<String> args) {
 
-        @Parameters(index = "1")
-        Long historiaId;
+        if (args.isEmpty()) {
+            throw new InvalidArgumentException(
+                    "No se proporcionó ningún subcomando para 'involucrados'");
+        }
 
-        @Override
-        public CommandResponse call() {
-            MedicosInvolucradosController controller = new MedicosInvolucradosController(new MedicosInvolucradosService());
-            return controller.asignarMedico(medicoId, historiaId);
+        this.ctx = ctx;
+        this.session = session;
+
+        String subCommand = args.remove(0).toLowerCase();
+
+        switch (subCommand) {
+
+            case "asignar":
+                return asignar(args);
+
+            case "remover":
+                return remover(args);
+
+            default:
+                throw new InvalidArgumentException(
+                        "Subcomando inválido: " + subCommand);
         }
     }
 
-    @Command(name = "remover")
-    static class Remover implements Callable<CommandResponse> {
-        @Parameters(index = "0")
-        Long medicoId;
+    @Override
+    public String getHelp() {
+        return "Comandos de médicos involucrados:\n"
+                + "  involucrados asignar <medicoId> <historiaId>\n"
+                + "  involucrados remover <medicoId> <historiaId>";
+    }
 
-        @Parameters(index = "1")
-        Long historiaId;
+    private CommandResponse asignar(List<String> args) {
 
-        @Override
-        public CommandResponse call() {
-            MedicosInvolucradosController controller = new MedicosInvolucradosController(new MedicosInvolucradosService());
-            return controller.removerMedico(medicoId, historiaId);
+        if (args.size() != 2) {
+            throw new InvalidArgumentException(
+                    "Argumentos erróneos para 'asignar'. "
+                            + "Se requieren 2 argumentos: "
+                            + "<medicoId> <historiaId>");
+        }
+
+        Long medicoId = parseId(args.get(0));
+        Long historiaId = parseId(args.get(1));
+
+        MedicosInvolucradosController controller = new MedicosInvolucradosController(
+                ctx,
+                session,
+                new MedicosInvolucradosService());
+
+        return controller.asignarMedico(
+                medicoId,
+                historiaId);
+    }
+
+    private CommandResponse remover(List<String> args) {
+
+        if (args.size() != 2) {
+            throw new InvalidArgumentException(
+                    "Argumentos erróneos para 'remover'. "
+                            + "Se requieren 2 argumentos: "
+                            + "<medicoId> <historiaId>");
+        }
+
+        Long medicoId = parseId(args.get(0));
+        Long historiaId = parseId(args.get(1));
+
+        MedicosInvolucradosController controller = new MedicosInvolucradosController(
+                ctx,
+                session,
+                new MedicosInvolucradosService());
+
+        return controller.removerMedico(
+                medicoId,
+                historiaId);
+    }
+
+    private Long parseId(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new InvalidArgumentException(
+                    "ID inválido: " + value);
         }
     }
 }

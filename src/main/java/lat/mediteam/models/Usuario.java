@@ -11,112 +11,58 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import lat.mediteam.enums.UsuarioTipo;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 public class Usuario {
+    
+    @Getter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Getter
+    @Setter
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Getter
+    @Setter
     @Column(nullable = false)
     private String password;
 
+    @Getter
+    @Setter
     @Enumerated(EnumType.STRING)
     private UsuarioTipo tipo;
 
+    @Getter
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private Admin admin;
 
+    @Getter
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private Medico medico;
 
+    @Getter
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private Paciente paciente;
- 
+
+    @Getter
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private Secretaria secretaria;
     
     public Usuario() {
+        // Constructor por defecto requerido por JPA
     }
-    
     public Usuario(String email, String password, UsuarioTipo tipo) {
         this.email = email;
         this.password = password;
         this.tipo = tipo;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public UsuarioTipo getTipo() {
-        return tipo;
-    }
-
-    public Admin getAdmin() {
-        return admin;
-    }
-
-    public void setAdmin(Admin admin) {
-        if (this.tipo != UsuarioTipo.ADMIN) {
-            throw new IllegalStateException("El tipo de usuario no es ADMIN");
-        }
-        this.admin = admin;
-    }
-
-    public Medico getMedico() {
-        return medico;
-    }
-
-    public void setMedico(Medico medico) {
-        if (this.tipo != UsuarioTipo.MEDICO) {
-            throw new IllegalStateException("El tipo de usuario no es MEDICO");
-        }
-        this.medico = medico;
-    }
-
-    public Paciente getPaciente() {
-        return paciente;
-    }
-
-    public void setPaciente(Paciente paciente) {
-        if (this.tipo != UsuarioTipo.PACIENTE) {
-            throw new IllegalStateException("El tipo de usuario no es PACIENTE");
-        }
-        this.paciente = paciente;
-    }
-
-    public Secretaria getSecretaria() {
-        return secretaria;
-    }
-
-    public void setSecretaria(Secretaria secretaria) {
-        if (this.tipo != UsuarioTipo.SECRETARIA) {
-            throw new IllegalStateException("El tipo de usuario no es SECRETARIA");
-        }
-        this.secretaria = secretaria;
     }
 }

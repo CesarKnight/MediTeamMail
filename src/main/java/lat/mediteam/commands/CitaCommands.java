@@ -1,131 +1,161 @@
 package lat.mediteam.commands;
 
-import java.util.concurrent.Callable;
-
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Parameters;
+import java.util.List;
 
 import lat.mediteam.controllers.CitaController;
+import lat.mediteam.core.AppContext;
+import lat.mediteam.core.Session;
+import lat.mediteam.exceptions.InvalidArgumentException;
 import lat.mediteam.services.CitaService;
 
-@Command(
-    name = "cita",
-    description = "Gestion de citas medicas",
-    subcommands = {
-        CitaCommands.Crear.class,
-        CitaCommands.Obtener.class,
-        CitaCommands.Listar.class,
-        CitaCommands.ListarPorPaciente.class,
-        CitaCommands.ListarPorMedico.class,
-        CitaCommands.Reprogramar.class,
-        CitaCommands.Cancelar.class,
-    }
-)
-public class CitaCommands {
+public class CitaCommands implements Command {
+    AppContext ctx;
+    Session session;
 
-    // cita crear <pacienteId> <medicoId> <servicioId> <fecha> <horaInicio> <horaFin> <motivo>
-    // Ejemplo: cita crear 1 2 1 2026-06-15 09:00 10:00 Consulta
-    @Command(name = "crear")
-    static class Crear implements Callable<CommandResponse> {
-
-        @Parameters(index = "0") Long pacienteId;
-        @Parameters(index = "1") Long medicoId;
-        @Parameters(index = "2") Long servicioId;
-        @Parameters(index = "3") String fecha;
-        @Parameters(index = "4") String horaInicio;
-        @Parameters(index = "5") String horaFin;
-        @Parameters(index = "6", defaultValue = "") String motivo;
-
-        @Override
-        public CommandResponse call() {
-            CitaController controller = new CitaController(new CitaService());
-            return controller.crearCita(pacienteId, medicoId, servicioId,
-                                        fecha, horaInicio, horaFin, motivo);
+    public CommandResponse execute(AppContext ctx, Session session, List<String> args) {
+        if (args.isEmpty()) {
+            throw new InvalidArgumentException("No se proporcionó ningún subcomando para 'cita'");
         }
+
+        this.ctx = ctx;
+        this.session = session;
+
+        String subCommand = args.remove(0).toLowerCase();
+
+        switch (subCommand) {
+            case "crear":
+                return crear(args);
+            case "obtener":
+                return obtener(args);
+            case "listar":
+                return listar(args);
+            case "porpaciente":
+                return porPaciente(args);
+            case "pormedico":
+                return porMedico(args);
+            case "reprogramar":
+                return reprogramar(args);
+            case "cancelar":
+                return cancelar(args);
+            default:
+                throw new InvalidArgumentException("Subcomando de cita inválido: " + subCommand);
+        }
+    }
+
+    public String getHelp() {
+        return "Comandos de cita:\n" +
+               "  cita crear <pacienteId> <medicoId> <servicioId> <fecha> <horaInicio> <horaFin> [motivo] - Crea una nueva cita\n" +
+               "  cita obtener <id> - Obtiene los detalles de una cita por ID\n" +
+               "  cita listar - Lista todas las citas\n" +
+               "  cita porpaciente <pacienteId> - Lista las citas de un paciente\n" +
+               "  cita pormedico <medicoId> - Lista las citas de un médico\n" +
+               "  cita reprogramar <id> <nuevaFecha> <nuevaHoraInicio> <nuevaHoraFin> - Reprograma una cita\n" +
+               "  cita cancelar <id> [motivo] - Cancela una cita";
+    }
+
+    // cita crear <pacienteId> <medicoId> <servicioId> <fecha> <horaInicio> <horaFin> [motivo]
+    private CommandResponse crear(List<String> args) {
+        if (args.size() < 6 || args.size() > 7) {
+            throw new InvalidArgumentException(
+                "Argumentos erróneos para 'crear'. Se requieren entre 6 y 7 argumentos: " +
+                "<pacienteId> <medicoId> <servicioId> <fecha> <horaInicio> <horaFin> [motivo]");
+        }
+
+        Long pacienteId = parseId(args.get(0), "paciente");
+        Long medicoId = parseId(args.get(1), "médico");
+        Long servicioId = parseId(args.get(2), "servicio");
+        String fecha = args.get(3);
+        String horaInicio = args.get(4);
+        String horaFin = args.get(5);
+        String motivo = args.size() > 6 ? args.get(6) : "";
+
+        CitaController controller = new CitaController(ctx, session, new CitaService());
+        return controller.crearCita(pacienteId, medicoId, servicioId, fecha, horaInicio, horaFin, motivo);
     }
 
     // cita obtener <id>
-    // Ejemplo: cita obtener 1
-    @Command(name = "obtener")
-    static class Obtener implements Callable<CommandResponse> {
-
-        @Parameters(index = "0") Long id;
-
-        @Override
-        public CommandResponse call() {
-            CitaController controller = new CitaController(new CitaService());
-            return controller.obtenerCita(id);
+    private CommandResponse obtener(List<String> args) {
+        if (args.size() != 1) {
+            throw new InvalidArgumentException("Argumentos erróneos para 'obtener'. Se requiere 1 argumento: <id>");
         }
+
+        Long id = parseId(args.get(0), "cita");
+
+        CitaController controller = new CitaController(ctx, session, new CitaService());
+        return controller.obtenerCita(id);
     }
 
     // cita listar
-    @Command(name = "listar")
-    static class Listar implements Callable<CommandResponse> {
-
-        @Override
-        public CommandResponse call() {
-            CitaController controller = new CitaController(new CitaService());
-            return controller.listarCitas();
+    private CommandResponse listar(List<String> args) {
+        if (!args.isEmpty()) {
+            throw new InvalidArgumentException("Argumentos erróneos para 'listar'. No se requieren argumentos.");
         }
+
+        CitaController controller = new CitaController(ctx, session, new CitaService());
+        return controller.listarCitas();
     }
 
     // cita porpaciente <pacienteId>
-    // Ejemplo: cita porpaciente 1
-    @Command(name = "porpaciente")
-    static class ListarPorPaciente implements Callable<CommandResponse> {
-
-        @Parameters(index = "0") Long pacienteId;
-
-        @Override
-        public CommandResponse call() {
-            CitaController controller = new CitaController(new CitaService());
-            return controller.listarPorPaciente(pacienteId);
+    private CommandResponse porPaciente(List<String> args) {
+        if (args.size() != 1) {
+            throw new InvalidArgumentException("Argumentos erróneos para 'porpaciente'. Se requiere 1 argumento: <pacienteId>");
         }
+
+        Long pacienteId = parseId(args.get(0), "paciente");
+
+        CitaController controller = new CitaController(ctx, session, new CitaService());
+        return controller.listarPorPaciente(pacienteId);
     }
 
     // cita pormedico <medicoId>
-    // Ejemplo: cita pormedico 2
-    @Command(name = "pormedico")
-    static class ListarPorMedico implements Callable<CommandResponse> {
-
-        @Parameters(index = "0") Long medicoId;
-
-        @Override
-        public CommandResponse call() {
-            CitaController controller = new CitaController(new CitaService());
-            return controller.listarPorMedico(medicoId);
+    private CommandResponse porMedico(List<String> args) {
+        if (args.size() != 1) {
+            throw new InvalidArgumentException("Argumentos erróneos para 'pormedico'. Se requiere 1 argumento: <medicoId>");
         }
+
+        Long medicoId = parseId(args.get(0), "médico");
+
+        CitaController controller = new CitaController(ctx, session, new CitaService());
+        return controller.listarPorMedico(medicoId);
     }
 
     // cita reprogramar <id> <nuevaFecha> <nuevaHoraInicio> <nuevaHoraFin>
-    // Ejemplo: cita reprogramar 1 2026-06-20 10:00 11:00
-    @Command(name = "reprogramar")
-    static class Reprogramar implements Callable<CommandResponse> {
-
-        @Parameters(index = "0") Long id;
-        @Parameters(index = "1") String nuevaFecha;
-        @Parameters(index = "2") String nuevaHoraInicio;
-        @Parameters(index = "3") String nuevaHoraFin;
-
-        @Override
-        public CommandResponse call() {
-            CitaController controller = new CitaController(new CitaService());
-            return controller.reprogramarCita(id, nuevaFecha, nuevaHoraInicio, nuevaHoraFin);
+    private CommandResponse reprogramar(List<String> args) {
+        if (args.size() != 4) {
+            throw new InvalidArgumentException(
+                "Argumentos erróneos para 'reprogramar'. Se requieren 4 argumentos: " +
+                "<id> <nuevaFecha> <nuevaHoraInicio> <nuevaHoraFin>");
         }
+
+        Long id = parseId(args.get(0), "cita");
+        String nuevaFecha = args.get(1);
+        String nuevaHoraInicio = args.get(2);
+        String nuevaHoraFin = args.get(3);
+
+        CitaController controller = new CitaController(ctx, session, new CitaService());
+        return controller.reprogramarCita(id, nuevaFecha, nuevaHoraInicio, nuevaHoraFin);
     }
 
-    // cita cancelar <id> <motivo>
-    // Ejemplo: cita cancelar 1 PacienteNoDisponible
-    @Command(name = "cancelar")
-    static class Cancelar implements Callable<CommandResponse> {
+    // cita cancelar <id> [motivo]
+    private CommandResponse cancelar(List<String> args) {
+        if (args.size() < 1 || args.size() > 2) {
+            throw new InvalidArgumentException(
+                "Argumentos erróneos para 'cancelar'. Se requieren entre 1 y 2 argumentos: <id> [motivo]");
+        }
 
-        @Parameters(index = "0") Long id;
-        @Parameters(index = "1", defaultValue = "") String motivo;
+        Long id = parseId(args.get(0), "cita");
+        String motivo = args.size() > 1 ? args.get(1) : "";
 
-        @Override
-        public CommandResponse call() {
-            CitaController controller = new CitaController(new CitaService());
-            return controller.cancelarCita(id, motivo);
+        CitaController controller = new CitaController(ctx, session, new CitaService());
+        return controller.cancelarCita(id, motivo);
+    }
+
+    // validaciones
+    private Long parseId(String idStr, String entidad) {
+        try {
+            return Long.parseLong(idStr);
+        } catch (NumberFormatException e) {
+            throw new InvalidArgumentException("ID de " + entidad + " inválido: " + idStr);
         }
     }
 }
