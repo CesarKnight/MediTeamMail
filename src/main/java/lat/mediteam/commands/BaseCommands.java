@@ -9,7 +9,8 @@ import lat.mediteam.exceptions.InvalidArgumentException;
 public class BaseCommands  {
     List<Class<? extends Command>> subCommandsClasses = List.of(
         UsuarioCommands.class,
-        AdminCommands.class
+        AdminCommands.class,
+        PacienteCommands.class
     );
 
     public CommandResponse execute (AppContext ctx, Session session, List<String> args) {        
@@ -46,6 +47,8 @@ public class BaseCommands  {
                     return new UsuarioCommands().execute(ctx, session, args);
                 case "admin":
                     return new AdminCommands().execute(ctx, session, args);
+                case "paciente":
+                    return new PacienteCommands().execute(ctx, session, args);
                 default:
                     throw new InvalidArgumentException( "Comando desconocido: " + mainCommand);
             }
