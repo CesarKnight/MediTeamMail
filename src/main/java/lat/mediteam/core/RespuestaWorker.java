@@ -74,8 +74,8 @@ public class RespuestaWorker implements Runnable{
             // String command = "medico crear 1 cesar caballero 12345678 cardiologia 1990-01-01";
             // String command = "medico listar";
             // String command = "historiaclinica crear 1 2024-01-01 pendiente diagnostico";
-            // String command = "historiaclinica listar";
-            
+            String command = "historiaclinica listar";
+
             // String command = "ayuda";
             
 
