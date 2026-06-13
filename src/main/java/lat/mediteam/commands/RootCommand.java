@@ -8,7 +8,7 @@ import picocli.CommandLine.Command;
     subcommands = {
         UsuarioCommands.class,
         AdminCommands.class,
-         PacienteCommands.class,
+        PacienteCommands.class,
         ServicioCommands.class,
         CitaCommands.class,
         MedicoCommands.class,
