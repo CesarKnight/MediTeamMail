@@ -1,5 +1,6 @@
 package lat.mediteam.core;
 
+
 public class App
 {   
     public static void main( String[] args )
@@ -20,8 +21,13 @@ public class App
         
         System.out.println(info);
         DatabaseManager.getEntityManager().close();
-        // MailListener.runServer();
-        MailListener.testRun();   
+
+        AppContext appContext = new AppContext(
+            new AuthManager()
+        );
+        
+        // MailListener.runServer(authManager);
+        MailListener.testRun(appContext);   
         
         System.out.println("bye bye...");
     }
