@@ -11,8 +11,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 public class Paciente {
-
     @Id
     @Getter
     private Long id;

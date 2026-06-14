@@ -68,8 +68,14 @@ public class RespuestaWorker implements Runnable{
             // String command = "login 123";
             // String command = "logout";
             // String command = "paciente crear 2 choquito jimenes 754623 choco@example.com";
-            String command= "paciente listar";
+            // String command= "paciente listar";
             // String command = "paciente eliminar 2";
+            // String command = "tratamiento crear ";
+            // String command = "medico crear 1 cesar caballero 12345678 cardiologia 1990-01-01";
+            // String command = "medico listar";
+            // String command = "historiaclinica crear 1 2024-01-01 pendiente diagnostico";
+            String command = "historiaclinica listar";
+
             // String command = "ayuda";
             
 

@@ -11,7 +11,16 @@ public class BaseCommands  {
         UsuarioCommands.class,
         AdminCommands.class,
         PacienteCommands.class,
-        PermisoCommands.class
+        PermisoCommands.class,
+        MedicoCommands.class,
+        MedicosInvolucradosCommands.class,
+        CitaCommands.class,
+        HistoriaClinicaCommands.class,
+        ServicioCommands.class,
+        DiagnosticoCommands.class,
+        TratamientoCommands.class,
+        CitaCommands.class,
+        ConsultaCommands.class
     );
 
     public CommandResponse execute (AppContext ctx, Session session, List<String> args) {        
@@ -50,6 +59,18 @@ public class BaseCommands  {
                     return new AdminCommands().execute(ctx, session, args);
                 case "paciente":
                     return new PacienteCommands().execute(ctx, session, args);
+                case "medico":
+                    return new MedicoCommands().execute(ctx, session, args);
+                case "cita":
+                    return new CitaCommands().execute(ctx, session, args);
+                case "historiaclinica":
+                    return new HistoriaClinicaCommands().execute(ctx, session, args);
+                case "servicio":
+                    return new ServicioCommands().execute(ctx, session, args);
+                case "diagnostico":
+                    return new DiagnosticoCommands().execute(ctx, session, args);
+                case "tratamiento":
+                    return new TratamientoCommands().execute(ctx, session, args);
                 case "permiso":
                     return new PermisoCommands().execute(ctx, session, args);
                 default:
