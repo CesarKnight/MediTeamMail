@@ -17,7 +17,9 @@ public class BaseCommands  {
         HistoriaClinicaCommands.class,
         ServicioCommands.class,
         DiagnosticoCommands.class,
-        TratamientoCommands.class
+        TratamientoCommands.class,
+        CitaCommands.class,
+        ConsultaCommands.class
     );
 
     public CommandResponse execute (AppContext ctx, Session session, List<String> args) {        
@@ -58,8 +60,6 @@ public class BaseCommands  {
                     return new PacienteCommands().execute(ctx, session, args);
                 case "medico":
                     return new MedicoCommands().execute(ctx, session, args);
-                case "medicosinvolucrados":
-                    return new MedicosInvolucradosCommands().execute(ctx, session, args);
                 case "cita":
                     return new CitaCommands().execute(ctx, session, args);
                 case "historiaclinica":
