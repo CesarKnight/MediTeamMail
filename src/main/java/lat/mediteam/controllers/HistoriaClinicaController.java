@@ -61,7 +61,7 @@ public class HistoriaClinicaController {
                 true,
                 historia.getId()
                         + " - "
-                        + historia.getFecha()
+                        + historia.getFechaCreacion()
                         + " - "
                         + historia.getEstado()
                         + " - "
@@ -90,7 +90,7 @@ public class HistoriaClinicaController {
             resultado
                     .append(h.getId())
                     .append(" - ")
-                    .append(h.getFecha())
+                    .append(h.getFechaCreacion())
                     .append(" - ")
                     .append(h.getEstado())
                     .append(" - ")

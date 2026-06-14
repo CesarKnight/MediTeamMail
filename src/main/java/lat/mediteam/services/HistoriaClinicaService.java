@@ -43,7 +43,6 @@ public class HistoriaClinicaService {
             }
 
             HistoriaClinica historia = new HistoriaClinica(
-                    fecha,
                     estado,
                     tipo,
                     medico);
@@ -151,7 +150,6 @@ public class HistoriaClinicaService {
 
             tx.begin();
 
-            historia.setFecha(fecha);
             historia.setEstado(estado);
             historia.setTipo(tipo);
 
