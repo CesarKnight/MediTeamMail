@@ -10,6 +10,7 @@ import lat.mediteam.core.Session;
 import lat.mediteam.enums.HistoriaClinicaEstado;
 import lat.mediteam.enums.HistoriaClinicaTipo;
 import lat.mediteam.models.HistoriaClinica;
+import lat.mediteam.models.Medico;
 import lat.mediteam.services.HistoriaClinicaService;
 
 public class HistoriaClinicaController {

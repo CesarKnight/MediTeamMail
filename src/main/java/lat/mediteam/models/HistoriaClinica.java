@@ -18,10 +18,9 @@ public class HistoriaClinica {
     @Getter
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "fecha_creacion", nullable = false, updatable = false)
     @Getter
-    @Setter
-    private String fecha;
+    private String fechaCreacion;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -35,7 +34,7 @@ public class HistoriaClinica {
     @Setter
     private HistoriaClinicaTipo tipo;
 
-    @ManyToMany(mappedBy = "historiasInvolucradas")
+    @ManyToMany(mappedBy = "historiasInvolucradas", fetch = FetchType.EAGER)
     @Getter
     @Setter
     private List<Medico> medicosInvolucrados = new ArrayList<>();
@@ -48,10 +47,10 @@ public class HistoriaClinica {
 
     protected HistoriaClinica() {}
 
-    public HistoriaClinica(String fecha, HistoriaClinicaEstado estado, HistoriaClinicaTipo tipo, Medico medicoCreador) {
-        this.fecha = fecha;
-        this.estado = estado;
-        this.tipo = tipo;
-        this.medicoCreador = medicoCreador;
-    }
+    public HistoriaClinica(HistoriaClinicaEstado estado, HistoriaClinicaTipo tipo, Medico medicoCreador) {
+    this.fechaCreacion = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    this.estado = estado;
+    this.tipo = tipo;
+    this.medicoCreador = medicoCreador;
+}
 }

@@ -1,14 +1,17 @@
 package lat.mediteam.commands;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import lat.mediteam.controllers.HistoriaClinicaController;
+import lat.mediteam.controllers.MedicosInvolucradosController;
 import lat.mediteam.core.AppContext;
 import lat.mediteam.core.Session;
 import lat.mediteam.enums.HistoriaClinicaEstado;
 import lat.mediteam.enums.HistoriaClinicaTipo;
 import lat.mediteam.exceptions.InvalidArgumentException;
 import lat.mediteam.services.HistoriaClinicaService;
+import lat.mediteam.services.MedicosInvolucradosService;
 
 public class HistoriaClinicaCommands implements Command {
 
@@ -44,6 +47,12 @@ public class HistoriaClinicaCommands implements Command {
 
             case "eliminar":
                 return eliminar(args);
+            
+            case "agregar_medico":
+                return asignarMedico(args);
+            
+            case "remover_medico":
+                return removerMedico(args);
 
             default:
                 throw new InvalidArgumentException(
@@ -192,16 +201,6 @@ public class HistoriaClinicaCommands implements Command {
         return controller.eliminarHistoria(id);
     }
 
-    private Long parseId(String value) {
-        try {
-            return Long.parseLong(value);
-        } catch (NumberFormatException e) {
-            throw new InvalidArgumentException(
-                "ID inválido: " + value
-            );
-        }
-    }
-
     private HistoriaClinicaEstado parseEstado(String estado) {
         try {
             return HistoriaClinicaEstado.valueOf(
@@ -222,6 +221,60 @@ public class HistoriaClinicaCommands implements Command {
         } catch (Exception e) {
             throw new InvalidArgumentException(
                 "Tipo inválido: " + tipo
+            );
+        }
+    }
+
+    private CommandResponse asignarMedico(List<String> args) {
+
+        if (args.size() != 2) {
+            throw new InvalidArgumentException(
+                    "Argumentos erróneos para 'asignar'. "
+                            + "Se requieren 2 argumentos: "
+                            + "<medicoId> <historiaId>");
+        }
+
+        Long medicoId = parseId(args.get(0));
+        Long historiaId = parseId(args.get(1));
+
+        MedicosInvolucradosController controller = new MedicosInvolucradosController(
+                ctx,
+                session,
+                new MedicosInvolucradosService());
+
+        return controller.asignarMedico(
+                medicoId,
+                historiaId);
+    }
+
+    private CommandResponse removerMedico(List<String> args) {
+
+        if (args.size() != 2) {
+            throw new InvalidArgumentException(
+                    "Argumentos erróneos para 'remover'. "
+                            + "Se requieren 2 argumentos: "
+                            + "<medicoId> <historiaId>");
+        }
+
+        Long medicoId = parseId(args.get(0));
+        Long historiaId = parseId(args.get(1));
+
+        MedicosInvolucradosController controller = new MedicosInvolucradosController(
+                ctx,
+                session,
+                new MedicosInvolucradosService());
+
+        return controller.removerMedico(
+                medicoId,
+                historiaId);
+    }
+
+    private Long parseId(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new InvalidArgumentException(
+                "ID inválido: " + value
             );
         }
     }
