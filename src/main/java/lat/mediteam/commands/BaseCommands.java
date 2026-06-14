@@ -11,6 +11,7 @@ public class BaseCommands  {
         UsuarioCommands.class,
         AdminCommands.class,
         PacienteCommands.class,
+        PermisoCommands.class,
         MedicoCommands.class,
         MedicosInvolucradosCommands.class,
         CitaCommands.class,
@@ -70,6 +71,8 @@ public class BaseCommands  {
                     return new DiagnosticoCommands().execute(ctx, session, args);
                 case "tratamiento":
                     return new TratamientoCommands().execute(ctx, session, args);
+                case "permiso":
+                    return new PermisoCommands().execute(ctx, session, args);
                 default:
                     throw new InvalidArgumentException( "Comando desconocido: " + mainCommand);
             }
