@@ -10,7 +10,8 @@ public class BaseCommands  {
     List<Class<? extends Command>> subCommandsClasses = List.of(
         UsuarioCommands.class,
         AdminCommands.class,
-        PacienteCommands.class
+        PacienteCommands.class,
+        PermisoCommands.class
     );
 
     public CommandResponse execute (AppContext ctx, Session session, List<String> args) {        
@@ -49,6 +50,8 @@ public class BaseCommands  {
                     return new AdminCommands().execute(ctx, session, args);
                 case "paciente":
                     return new PacienteCommands().execute(ctx, session, args);
+                case "permiso":
+                    return new PermisoCommands().execute(ctx, session, args);
                 default:
                     throw new InvalidArgumentException( "Comando desconocido: " + mainCommand);
             }

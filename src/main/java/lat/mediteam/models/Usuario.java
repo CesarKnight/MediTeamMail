@@ -20,15 +20,11 @@ import jakarta.persistence.PrimaryKeyJoinColumn;
 import lombok.Getter;
 import lombok.Setter;
 import lat.mediteam.enums.UsuarioTipo;
-import lombok.Getter;
-import lombok.Setter;
 
 @Entity
-@Getter
-@Setter
 public class Usuario {
     
-    @Getter
+    @Getter 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -75,6 +71,8 @@ public class Usuario {
         joinColumns = @JoinColumn(name = "usuario_id"),
         inverseJoinColumns = @JoinColumn(name = "permiso_id")
     )
+    @Getter
+    @Setter
     private Set<Permiso> permisos = new HashSet<>();
 
     public Usuario() {
