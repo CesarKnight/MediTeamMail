@@ -1,23 +1,30 @@
 package lat.mediteam.models;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrimaryKeyJoinColumn;
-import lat.mediteam.enums.UsuarioTipo;
 import lombok.Getter;
 import lombok.Setter;
+import lat.mediteam.enums.UsuarioTipo;
 
 @Entity
 public class Usuario {
     
-    @Getter
+    @Getter 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,6 +42,7 @@ public class Usuario {
     @Getter
     @Setter
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private UsuarioTipo tipo;
 
     @Getter
@@ -57,6 +65,16 @@ public class Usuario {
     @PrimaryKeyJoinColumn
     private Secretaria secretaria;
     
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "usuario_permiso",
+        joinColumns = @JoinColumn(name = "usuario_id"),
+        inverseJoinColumns = @JoinColumn(name = "permiso_id")
+    )
+    @Getter
+    @Setter
+    private Set<Permiso> permisos = new HashSet<>();
+
     public Usuario() {
         // Constructor por defecto requerido por JPA
     }
