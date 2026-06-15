@@ -67,9 +67,14 @@ public class RespuestaWorker implements Runnable{
             // String command = "admin crear 1 cesar caballero";
             // String command = "login 123";
             // String command = "logout";
-            String command = "ayuda";
-            
-
+            //String command = "ayuda";
+           // String command = "usuario crear secre@gmail.com 123 secretaria";
+           // String command = "usuario listar";
+   // String command = "secretaria crear 4 Maria Lopez 12345678 75512345 maria@secretaria.com 1990-05-20";
+           String command = "secretaria listar";
+           //String command = "secretaria obtener 4";
+         //  String command ="secretaria editar 4 Maria Lopez 70012345 maria.nueva@secretaria.com";
+            //String command = "secretaria eliminar 4";
             CommandResponse response = executeCommand(command);
             
             System.out.println("Comando ejecutado exitosamente para usuario " + parsedEmail.getSender());

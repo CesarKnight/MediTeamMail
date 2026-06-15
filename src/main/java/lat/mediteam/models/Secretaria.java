@@ -7,9 +7,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 public class Secretaria {
+
     @Id
     private Long id;
 
@@ -20,4 +25,33 @@ public class Secretaria {
 
     @Column(nullable = false)
     private String nombre;
+
+    @Column(nullable = false)
+    private String apellido;
+
+    @Column(nullable = false, unique = true)
+    private String ci;
+
+    @Column
+    private String telefono;
+
+    @Column
+    private String email;
+
+    @Column
+    private String fechaNacimiento;
+
+    protected Secretaria() {}
+
+    public Secretaria(String nombre, String apellido, String ci,
+                      String telefono, String email, String fechaNacimiento,
+                      Usuario usuario) {
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.ci = ci;
+        this.telefono = telefono;
+        this.email = email;
+        this.fechaNacimiento = fechaNacimiento;
+        this.usuario = usuario;
+    }
 }
