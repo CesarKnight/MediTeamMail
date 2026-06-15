@@ -26,8 +26,8 @@ public class App
             new AuthManager()
         );
         
-        // MailListener.runServer(authManager);
-        MailListener.testRun(appContext);   
+        MailListener.runServer(appContext);
+        // MailListener.testRun(appContext);   
         
         System.out.println("bye bye...");
     }
