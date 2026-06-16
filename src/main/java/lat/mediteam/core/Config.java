@@ -11,7 +11,8 @@ public final class Config {
 			.load();
 
 	// Configuración de la base de datos
-	public static final String DB_URL = "jdbc:" + dotenv.get("DB_DIALECT").toLowerCase() + "://" + dotenv.get("DB_HOST") + ":" + dotenv.get("DB_PORT") + "/" + dotenv.get("DB_NAME");
+	public static final String DB_URL = "jdbc:" + dotenv.get("DB_DIALECT").toLowerCase() + "://" + 
+		dotenv.get("DB_HOST") + ":" + dotenv.get("DB_PORT") + "/" + dotenv.get("DB_NAME");
 	public static final String DB_USER = dotenv.get("DB_USER");
 	public static final String DB_PASSWORD = dotenv.get("DB_PASSWORD");
 	public static final String DB_DRIVER = getDB_DRIVER();
@@ -23,10 +24,13 @@ public final class Config {
 	public static final String PASSWORD = dotenv.get("PASSWORD");
 
 	// Configuración de la aplicación
-	public static final String COMANDO_EJECUCION = dotenv.get("COMANDO_EJECUCION");
-	public static final int MAIL_SYNC_INTERVAL_MS = Integer.parseInt(dotenv.get("MAIL_SYNC_INTERVAL_MS", "60000"));
+	public static final long MAIL_SYNC_INTERVAL_MS = Long.parseLong(dotenv.get("MAIL_SYNC_INTERVAL_MS", "10000"));
 	public static final int MAX_THREADS = Integer.parseInt(dotenv.get("MAX_THREADS", "10"));
-
+	public static final long SESSION_LIFE_MINUTES = Long.parseLong(dotenv.get("SESSION_LIFE_MINUTES", "1800000"));
+	public static final int MAX_SEND_EMAIL_RETRIES = Integer.parseInt(dotenv.get("MAX_SEND_EMAIL_RETRIES", "2"));
+	public static final int POP_TIMETOUT_MS = Integer.parseInt(dotenv.get("POP_TIMETOUT_MS", "5000"));
+	public static final int SMTP_TIMEOUT_MS = Integer.parseInt(dotenv.get("SMTP_TIMEOUT_MS", "5000"));
+	
 	public static String getDB_DRIVER() {
 		String db_dialect = dotenv.get("DB_DIALECT");
 		switch (db_dialect) {

@@ -3,10 +3,13 @@ package lat.mediteam.core;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lat.mediteam.commands.CommandResponse;
 import lat.mediteam.commands.BaseCommands;
 import lat.mediteam.mail.Email;
+import lat.mediteam.mail.SmtpCliente;
 
 public class RespuestaWorker implements Runnable{
     int id;
@@ -17,24 +20,76 @@ public class RespuestaWorker implements Runnable{
     BaseCommands parser;
     Session session;
 
-    public RespuestaWorker(int id, String server, String rawEmail, AppContext appContext) {
+    public RespuestaWorker(int threadId, String server, String rawEmail, AppContext appContext) {
         if (rawEmail == null || rawEmail.isEmpty()) {
-            return;
+            throw new IllegalArgumentException("El correo electrónico no puede ser nulo o vacío");
         }
-        this.id = id;
+        if (server == null || server.isEmpty()) {
+            throw new IllegalArgumentException("El servidor de correo no puede ser nulo o vacío");
+        }
+        if (appContext == null) {
+            throw new IllegalArgumentException("El contexto de la aplicación no puede ser nulo");
+        }
+        
+        this.id = threadId;
         this.mailserver = server;
-        parsedEmail = new Email(rawEmail);
         this.appContext = appContext;
+        
+        parsedEmail = new Email(rawEmail, mailserver);
+        System.out.println(parsedEmail);
     }
 
-    private CommandResponse executeCommand(String command) {
-        List<String> tokens = new ArrayList<>(List.of(command.split("\\s+")));
-        return parser.execute(appContext, session, tokens);
+    private List<String> tokenize(String command) {
+        List<String> tokens = new ArrayList<>();
+        Matcher matcher = Pattern.compile("\"([^\"]*)\"|'([^')']*)'|(\\S+)").matcher(command);
+        
+        while (matcher.find()) {
+            if (matcher.group(1) != null) {
+                tokens.add(matcher.group(1)); // Double-quoted: strip quotes
+            } else if (matcher.group(2) != null) {
+                tokens.add(matcher.group(2)); // Single-quoted: strip quotes
+            } else {
+                tokens.add(matcher.group(3)); // Unquoted token
+            }
+        }
+        
+        return tokens;
     }
-
+    
     private void sendEmail(String recipient, String subject, String body) {
-        // Aquí iría la lógica para enviar un correo electrónico
-        System.out.println("Enviando correo a " + recipient + " con asunto '" + subject + "' y cuerpo: " + body);
+        int pointIndex = Config.MAIL_SERVER.indexOf(".") + 1;
+        String fullServerSender = Config.MAIL_TO_LISTEN + "@" + Config.MAIL_SERVER.substring(pointIndex);
+        
+        SmtpCliente smtp = new SmtpCliente(
+            mailserver, 
+            parsedEmail.getSender(), 
+            fullServerSender
+        );
+        
+        Boolean enviado = false;
+        
+        int retries = 0;
+        while (retries < Config.MAX_SEND_EMAIL_RETRIES) {
+            smtp.connect(Config.SMTP_TIMEOUT_MS);
+            enviado = smtp.sendEmail(subject,body);
+            if (enviado){
+                smtp.disconnect();
+                
+                System.out.println(
+                    "Correo enviado a " + recipient + "\n" + 
+                    "Con asunto '" + subject + "'\n" 
+                    + "Cuerpo: \n" + body
+                );
+                break;
+            }
+            
+            System.out.println("fallo al enviar respuesta a " + parsedEmail.getSender());
+            System.out.println("reenviando...");
+            retries++;
+        }
+        if (retries > Config.MAX_SEND_EMAIL_RETRIES){
+            System.out.println("NO se puedo enviar el correo a " +  parsedEmail.getSender() + " \n Con sujeto: " + subject);
+        }
     }
 
 
@@ -42,59 +97,43 @@ public class RespuestaWorker implements Runnable{
     public void run() {
         System.out.println("Hilo " + id + " atendiendo a cliente " + parsedEmail.getSender());
         if (parsedEmail == null) {
-            System.out.println("No se pudo analizar el correo con ID " + id);
-            return;
+            throw new IllegalArgumentException("El correo electrónico no puede ser nulo");
         }
-
         try {
             parser = new BaseCommands();
-            session = appContext.getAuthManager().findByEmail(parsedEmail.getSender());
+            // ponerSessiondePrueba(); // TODO Pone una sesion ya logeada, eliminar en produccion
             
-            ponerSessiondePrueba(); // todo eliminar en produccion, Pone una sesion ya logeada
-
+            session = appContext.getAuthManager().findByEmail(parsedEmail.getSender());
             if (session == null) {
-                // session = Session.nonAuthenticated("cesar@gmail.com"); // para probar logeo
-                session = Session.nonAuthenticated(parsedEmail.getSender()); // produccion
+                session = Session.nonAuthenticated(parsedEmail.getSender());
             }
             
-
-            // String command = "usuario crear choco@gmail.com 123 paciente";
-            // String command = "usuario    listar";
-            // String command = "usuario eliminar 202";
-            // String command = "usuario editar 4 eliezer22@gmail.com 123";
-            // String command = "admin listar";
-            // String command = "admin obtener 1";
-            // String command = "admin crear 1 cesar caballero";
-            // String command = "login 123";
-            // String command = "logout";
-            // String command = "paciente crear 2 choquito jimenes 754623 choco@example.com";
-            // String command= "paciente listar";
-            // String command = "paciente eliminar 2";
-            // String command = "tratamiento crear ";
-            // String command = "medico crear 1 cesar caballero 12345678 cardiologia 1990-01-01";
-            // String command = "medico listar";
-            // String command = "historiaclinica crear 1 2024-01-01 pendiente diagnostico";
-            String command = "historiaclinica listar";
-
-            // String command = "ayuda";
+            System.out.println("Comando recibido: " + parsedEmail.getSubject());
             
-
-            CommandResponse response = executeCommand(command);
+            String command = parsedEmail.getSubject().trim();
+            List<String> tokens = tokenize(command);
+            CommandResponse response = parser.execute(appContext, session, tokens);;
             
             System.out.println("Comando ejecutado exitosamente para usuario " + parsedEmail.getSender());
-            System.out.println(response.getMessage());
+            sendEmail(
+                parsedEmail.getSender(),
+                "Respuesta a comando: " + command, 
+                response.getMessage()
+            );
             
         } catch (Exception e) {
-            String errorMessage = e.getClass().getSimpleName() + ": " + e.getMessage();
-            System.out.println("Error en hilo " + id + ": " + errorMessage);
-
-            // sendEmail(sender, "Error al procesar comando", errorMessage);
+            String errorMessage = "Error " + e.getClass().getSimpleName() + ": " + e.getMessage();
+            sendEmail(
+                parsedEmail.getSender(),
+                "Error al ejecutar commando: " + parsedEmail.getSubject(), 
+                errorMessage
+            );
         }
     }
 
     private void ponerSessiondePrueba(){
         Long pruebaId = 1L;
-        String pruebaEmail = "cesar@gmail.com";
+        String pruebaEmail = parsedEmail.getSender();
         Set<String> permisos = Set.of("permiso1", "permiso2"); // todo implementar permisos
         
 

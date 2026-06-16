@@ -2,7 +2,6 @@ package lat.mediteam.mail;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
@@ -31,92 +30,89 @@ public class PopCliente {
         this(servidor, usuario, contrasena, 110);// Puerto por defecto del protocolo POP3
     }
 
-    public void connect(){
+    public boolean connect(int timeout){
         try {
             socketPOP = new Socket(servidor,puertoPop);
+            socketPOP.setSoTimeout(timeout);
+
             entrada = new BufferedReader(new InputStreamReader(socketPOP.getInputStream()));
             salida = new BufferedWriter(new OutputStreamWriter(socketPOP.getOutputStream()));
-            System.out.println("S : "+entrada.readLine()+"\r\n");
-
-        } catch (IOException e) {
-
-            if( socketPOP != null && entrada != null && salida != null ){
-                System.out.println(" S : No se pudo establecer la conexión con el servidor POP3");
-                return;
-            }else{
-                System.out.println(" S : Error al conectar con el servidor POP3: " + e.getMessage());
-            }
+            entrada.readLine();
+            return true;
+            
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException("No se pudo conectar al servidor POP3: " + e.getMessage());
         }
     }
 
-    public void disconnect(){
+    public boolean disconnect(){
         try {
             if (socketPOP != null) socketPOP.close();
             if (entrada != null) entrada.close();
             if (salida != null) salida.close();
-        } catch (IOException e) {
-            System.out.println(" S : Error al cerrar la conexión: " + e.getMessage());
+            return true;
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException("Error al cerrar la conexión: " + e.getMessage());
         }
     }
 
-    public void login(){
+    public boolean login(){
         try {
             comando="USER "+usuario+"\r\n";
-            System.out.print("C : "+comando);
-            salida.write( comando );   
-            salida.flush();
-            System.out.println("S : " + entrada.readLine());
-            
-            comando="PASS "+contrasena+"\r\n";
-            System.out.print("C : "+comando);
+            // System.out.print("C : "+comando);
             salida.write( comando );   
             salida.flush();
             String response = entrada.readLine();
-            System.out.println("S : " + response);
+            
+            comando="PASS "+contrasena+"\r\n";
+            salida.write( comando );   
+            salida.flush();
+            response = entrada.readLine();
             
             if (response.startsWith("+OK")) {
                 isLoggedIn = true;
-                System.out.println(" S : Inicio de sesión exitoso");
+                return true;
             } else {
-                System.out.println(" S : Credenciales incorrectas, no se pudo iniciar sesión");
+                return false;
             }
-        } catch (IOException e) {
-            System.out.println(" S : Error al iniciar sesión: " + e.getMessage());
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException("Error al iniciar sesión: " + e.getMessage());
         }
     }
 
-    public void logout(){
+    public boolean logout(){
         if (!isLoggedIn) {
-            System.out.println(" S : No hay sesión activa");
-            return;
+            return false;
         }
         
         try {
             comando="QUIT\r\n";
-            System.out.print("C : "+comando);
             salida.write( comando );   
             salida.flush();
-            System.out.println("S : " + entrada.readLine());
+            entrada.readLine();
             isLoggedIn = false;
-        } catch (IOException e) {
-            System.out.println(" S : Error al cerrar sesión: " + e.getMessage());
+            return true;
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException(" S : Error al cerrar sesión: " + e.getMessage());
         }
     }
 
     public int getEmailCount(){
         if (!isLoggedIn) {
-            System.out.println(" S : No hay sesión activa");
-            return -1;
+            throw new RuntimeException("S: No hay sesión activa");
         }
 
         int emailCount = 0;
         try {
             comando="STAT\r\n";
-            System.out.print("C : "+comando);
             salida.write( comando );   
             salida.flush();
             String response = entrada.readLine();
-            System.out.println("S : " + response);
+            // System.out.println("S: " + response);
             
             if (response.startsWith("+OK")) {
                 String[] parts = response.split(" ");
@@ -124,50 +120,53 @@ public class PopCliente {
                     emailCount = Integer.parseInt(parts[1]);
                 }
             } else {
-                System.out.println(" S : Error al obtener el número de correos");
+                // Si la respuesta no es +OK, se considera que no se pudo obtener el número de correos
+                return -1;
             }
-        } catch (IOException e) {
-            System.out.println(" S : Error al obtener el número de correos: " + e.getMessage());
+        } catch (Exception e) {
+            return -1;
         }
         return emailCount;
     }
 
     public String readEmail(int emailIndex){
         if (!isLoggedIn) {
-            System.out.println(" S : No hay sesión activa");
-            return "";
+            throw new RuntimeException("S: No hay sesión activa");
         }
+
         try {
             comando="RETR " + emailIndex + "\r\n";
-            System.out.print("C : "+comando);
             salida.write( comando );    
             salida.flush();           
-            
             return readMultilineResponse();
-        } catch (IOException e) {
-            System.out.println(" S : Error al leer el correo: " + e.getMessage());
-            return "";
+        } catch (Exception e) {
+            throw new RuntimeException("S: Error al leer el correo: " + e.getMessage());
         }
     }
            
-    public void deleteEmail(int emailIndex){
+    public boolean deleteEmail(int emailIndex){
         if (!isLoggedIn) {
-            System.out.println(" S : No hay sesión activa");
-            return;
+            throw new RuntimeException("S: No hay sesión activa");
         }
         try {
             comando="DELE " + emailIndex + "\r\n";
-            System.out.print("C : "+comando);
             salida.write( comando );               
             salida.flush();
-            System.out.println("S : "+entrada.readLine());
-        
-        } catch (IOException e) {
-            System.out.println(" S : Error al eliminar el correo: " + e.getMessage());
+            String response = entrada.readLine();
+            // System.out.println("S : "+response);
+
+            if (response.startsWith("+OK")) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException("Error al eliminar el correo #" +emailIndex+ ": " + e.getMessage());
         }
     }
 
-    private String readMultilineResponse() throws IOException {
+    private String readMultilineResponse() throws Exception {
         StringBuilder response = new StringBuilder();
         String line;
         while ((line = entrada.readLine()) != null) {

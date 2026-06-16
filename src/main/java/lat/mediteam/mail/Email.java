@@ -1,200 +1,235 @@
 package lat.mediteam.mail;
 
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * Represents an email message parsed from a raw POP3 RETR response.
+ *
+ * Supports:
+ *  - Simple plain-text emails (e.g. sent via Telnet/SMTP)
+ *  - Multipart MIME emails (e.g. sent from Gmail)
+ */
+@Getter
+@Setter
 public class Email {
-    String server;
-    String sender;
-    String recipient;
-    String subject;
-    String body;
 
-    public Email(String raw) {
-        this.server = "";
-        this.sender = "";
-        this.recipient = "";
-        this.subject = "";
-        this.body = "";
+    private String mailServer;
+    private String sender;
+    private String recipient;
+    private String subject;
+    private String body;
 
-        if (raw == null || raw.isEmpty()) {
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    /**
+     * Parses a raw POP3 RETR response string into an Email object.
+     *
+     * @param raw        The full string returned by Pop3Client.readEmail()
+     * @param mailServer The mail server host this email was retrieved from
+     */
+    public Email(String raw, String mailServer) {
+        this.mailServer = mailServer;
+        parse(raw);
+    }
+
+    // -------------------------------------------------------------------------
+    // Parsing orchestration
+    // -------------------------------------------------------------------------
+
+    /**
+     * Entry point for parsing. Splits the raw response into a header block
+     * and a body block, then delegates each to its own parser.
+     */
+    private void parse(String raw) {
+        String cleaned = stripPop3StatusLine(raw);
+
+        // Headers and body are separated by the first blank line
+        int headerBodySplit = cleaned.indexOf("\r\n\r\n");
+        if (headerBodySplit == -1) headerBodySplit = cleaned.indexOf("\n\n");
+
+        if (headerBodySplit == -1) {
+            // Malformed email — treat entire content as body
+            parseHeaders("");
+            this.body = cleaned.trim();
             return;
         }
 
-        String normalized = raw.replace("\r\n", "\n");
-        String[] parts = normalized.split("\n\n", 2);
-        String headers = parts[0].replaceAll("\n[ \t]+", " ");
-        String content = parts.length > 1 ? parts[1] : "";
+        String headerBlock = cleaned.substring(0, headerBodySplit);
+        String bodyBlock   = cleaned.substring(headerBodySplit).trim();
 
-        for (String headerLine : headers.split("\n")) {
-            String lower = headerLine.toLowerCase();
-
-            if (lower.startsWith("from:")) {
-                this.sender = normalizeAddress(headerLine.substring(5).trim());
-            } else if (lower.startsWith("to:") && this.recipient.isEmpty()) {
-                this.recipient = normalizeAddress(headerLine.substring(3).trim());
-            } else if (lower.startsWith("received:")) {
-                if (this.server.isEmpty()) {
-                    this.server = extractServerFromReceived(headerLine);
-                }
-
-                String receivedRecipient = extractRecipientFromReceived(headerLine);
-                if (!receivedRecipient.isEmpty()) {
-                    this.recipient = normalizeAddress(receivedRecipient);
-                }
-            } else if (lower.startsWith("subject:")) {
-                this.subject = headerLine.substring(8).trim();
-            }
-        }
-
-        this.body = extractBody(content);
+        parseHeaders(headerBlock);
+        this.body = parseBody(bodyBlock, headerBlock);
     }
 
-    public String getServer() {
-        return server;
-    }
+    // -------------------------------------------------------------------------
+    // Header parsing
+    // -------------------------------------------------------------------------
 
-    public String getSender() {
-        return sender;
-    }
+    /**
+     * Extracts From, To, and Subject from the header block.
+     * Handles folded headers (continuation lines starting with whitespace).
+     */
+    private void parseHeaders(String headerBlock) {
+        // Unfold folded header lines (RFC 2822: CRLF followed by whitespace)
+        String unfolded = headerBlock
+                .replaceAll("\r\n[ \t]+", " ")
+                .replaceAll("\n[ \t]+", " ");
 
-    public String getRecipient() {
-        return recipient;
-    }
-
-    public String getSubject() {
-        return subject;
-    }
-
-    public String getBody() {
-        return body;
-    }
-
-    private String extractBody(String content) {
-        if (content == null || content.isEmpty()) {
-            return "";
-        }
-
-        String boundary = findBoundary(content);
-
-        if (boundary.isEmpty()) {
-            return stripPartHeaders(content).trim();
-        }
-
-        String plainText = "";
-        String htmlText = "";
-
-        String[] sections = content.split("--" + java.util.regex.Pattern.quote(boundary));
-        for (String section : sections) {
-            String trimmed = section.trim();
-            if (trimmed.isEmpty() || trimmed.equals("--")) {
-                continue;
-            }
-
-            String sectionLower = trimmed.toLowerCase();
-            if (sectionLower.contains("content-type: text/plain")) {
-                plainText = stripPartHeaders(trimmed).trim();
-            } else if (sectionLower.contains("content-type: text/html")) {
-                htmlText = stripPartHeaders(trimmed).trim();
-            }
-        }
-
-        return !plainText.isEmpty() ? plainText : htmlText;
-    }
-
-    private String findBoundary(String content) {
-        String[] lines = content.split("\n");
-        for (String line : lines) {
+        for (String line : unfolded.split("\r?\n")) {
             String lower = line.toLowerCase();
-            if (lower.startsWith("content-type:") && lower.contains("boundary=")) {
-                int idx = lower.indexOf("boundary=");
-                String value = line.substring(idx + "boundary=".length()).trim();
-                if (value.startsWith("\"") && value.endsWith("\"")) {
-                    value = value.substring(1, value.length() - 1);
+            if (lower.startsWith("from:")) {
+                this.sender = extractAddress(line.substring(5).trim());
+            } else if (lower.startsWith("to:")) {
+                this.recipient = extractAddress(line.substring(3).trim());
+            } else if (lower.startsWith("delivered-to:")) {
+                this.recipient = extractAddress(line.substring(3).trim());
+            } else if (lower.startsWith("subject:")) {
+                this.subject = line.substring(8).trim();
+            }
+        }
+    }
+
+    /**
+     * Extracts a clean email address from a header value that may be in
+     * "Display Name <email@example.com>" or plain "<email@example.com>" format.
+     *
+     * @param value Raw header value after the colon
+     * @return The bare email address, or the original value if no angle brackets found
+     */
+    private String extractAddress(String value) {
+        int start = value.indexOf('<');
+        int end   = value.indexOf('>');
+        if (start != -1 && end != -1 && end > start) {
+            return value.substring(start + 1, end).trim();
+        }
+        return value.trim();
+    }
+
+    // -------------------------------------------------------------------------
+    // Body parsing
+    // -------------------------------------------------------------------------
+
+    /**
+     * Determines whether the email is multipart MIME or plain text and
+     * delegates to the appropriate parser.
+     *
+     * @param bodyBlock   Everything after the blank line separating headers/body
+     * @param headerBlock The raw header block, used to detect Content-Type
+     * @return The parsed, human-readable body text
+     */
+    private String parseBody(String bodyBlock, String headerBlock) {
+        String boundary = extractMimeBoundary(headerBlock);
+        if (boundary != null) {
+            return parseMimeBody(bodyBlock, boundary);
+        }
+        return bodyBlock.trim();
+    }
+
+    /**
+     * Looks for a MIME boundary declaration in the Content-Type header.
+     * Example: {@code Content-Type: multipart/alternative; boundary="abc123"}
+     *
+     * @return The boundary string (without leading "--"), or null if not multipart
+     */
+    private String extractMimeBoundary(String headerBlock) {
+        String unfolded = headerBlock
+                .replaceAll("\r\n[ \t]+", " ")
+                .replaceAll("\n[ \t]+", " ");
+
+        for (String line : unfolded.split("\r?\n")) {
+            if (line.toLowerCase().startsWith("content-type:") && line.contains("boundary=")) {
+                int idx = line.indexOf("boundary=");
+                String boundary = line.substring(idx + 9).trim();
+                // Strip surrounding quotes if present
+                if (boundary.startsWith("\"")) {
+                    boundary = boundary.substring(1, boundary.lastIndexOf("\""));
                 }
-                return value;
-            }
-
-            // The first boundary marker in body can also reveal the boundary name.
-            if (line.startsWith("--") && line.length() > 2) {
-                return line.substring(2).trim();
+                return boundary;
             }
         }
-        return "";
+        return null;
     }
 
-    private String stripPartHeaders(String part) {
-        String normalized = part.replace("\r\n", "\n");
-        String[] split = normalized.split("\n\n", 2);
-        return split.length > 1 ? split[1] : split[0];
-    }
+    /**
+     * Parses a multipart MIME body and returns the content of the
+     * {@code text/plain} part. Falls back to {@code text/html} (stripped)
+     * if no plain-text part is found.
+     *
+     * @param bodyBlock The raw body block
+     * @param boundary  The MIME boundary string (without "--" prefix)
+     * @return The plain-text content of the best matching MIME part
+     */
+    private String parseMimeBody(String bodyBlock, String boundary) {
+        String delimiter = "--" + boundary;
+        String[] parts = bodyBlock.split("(?m)^" + java.util.regex.Pattern.quote(delimiter));
 
-    private String extractServerFromReceived(String receivedHeader) {
-        String trimmed = receivedHeader.substring("Received:".length()).trim();
+        String htmlFallback = null;
 
-        int fromIndex = trimmed.toLowerCase().indexOf("from ");
-        if (fromIndex >= 0) {
-            String afterFrom = trimmed.substring(fromIndex + 5).trim();
-            int firstSpace = afterFrom.indexOf(' ');
-            if (firstSpace > 0) {
-                return afterFrom.substring(0, firstSpace).trim();
+        for (String part : parts) {
+            if (part.isBlank() || part.trim().equals("--")) continue;
+
+            // Each part has its own mini header block and body
+            int partSplit = part.indexOf("\r\n\r\n");
+            if (partSplit == -1) partSplit = part.indexOf("\n\n");
+            if (partSplit == -1) continue;
+
+            String partHeaders = part.substring(0, partSplit).toLowerCase();
+            String partBody    = part.substring(partSplit).trim();
+
+            if (partHeaders.contains("text/plain")) {
+                return partBody;
             }
-            return afterFrom;
-        }
-
-        return trimmed;
-    }
-
-    private String extractRecipientFromReceived(String receivedHeader) {
-        String trimmed = receivedHeader.substring("Received:".length()).trim();
-        String lower = trimmed.toLowerCase();
-
-        int forIndex = lower.indexOf(" for ");
-        if (forIndex < 0) {
-            return "";
-        }
-
-        String afterFor = trimmed.substring(forIndex + 5).trim();
-        if (afterFor.isEmpty()) {
-            return "";
-        }
-
-        if (afterFor.startsWith("<")) {
-            int endBracket = afterFor.indexOf('>');
-            if (endBracket > 1) {
-                return afterFor.substring(1, endBracket).trim();
+            if (partHeaders.contains("text/html")) {
+                htmlFallback = stripHtmlTags(partBody);
             }
         }
 
-        int endSemicolon = afterFor.indexOf(';');
-        int endSpace = afterFor.indexOf(' ');
-
-        int end = -1;
-        if (endSemicolon >= 0 && endSpace >= 0) {
-            end = Math.min(endSemicolon, endSpace);
-        } else if (endSemicolon >= 0) {
-            end = endSemicolon;
-        } else if (endSpace >= 0) {
-            end = endSpace;
-        }
-
-        if (end > 0) {
-            return afterFor.substring(0, end).trim();
-        }
-
-        return afterFor;
+        return htmlFallback != null ? htmlFallback : bodyBlock.trim();
     }
 
-    private String normalizeAddress(String value) {
-        if (value == null) {
-            return "";
+    /**
+     * Removes HTML tags from a string for use as a plain-text fallback.
+     *
+     * @param html Raw HTML string
+     * @return Plain text with tags removed and whitespace normalized
+     */
+    private String stripHtmlTags(String html) {
+        return html.replaceAll("<[^>]+>", "").trim();
+    }
+
+    // -------------------------------------------------------------------------
+    // POP3 response cleanup
+    // -------------------------------------------------------------------------
+
+    /**
+     * Removes the first "+OK ... octets" line that POP3 prepends to RETR responses.
+     *
+     * @param raw The raw POP3 response
+     * @return The email content without the status line
+     */
+    private String stripPop3StatusLine(String raw) {
+        int firstNewline = raw.indexOf('\n');
+        if (firstNewline != -1 && raw.startsWith("+OK")) {
+            return raw.substring(firstNewline + 1);
         }
+        return raw;
+    }
 
-        String trimmed = value.trim();
-        int start = trimmed.indexOf('<');
-        int end = trimmed.indexOf('>');
+    // -------------------------------------------------------------------------
+    // Utility
+    // -------------------------------------------------------------------------
 
-        if (start >= 0 && end > start) {
-            return trimmed.substring(start + 1, end).trim();
-        }
-
-        return trimmed.replace("<", "").replace(">", "").trim();
+    @Override
+    public String toString() {
+        return "Email{" +
+                "mailServer='" + mailServer + '\'' +
+                ", sender='"    + sender    + '\'' +
+                ", recipient='" + recipient + '\'' +
+                ", subject='"   + subject   + '\'' +
+                ", body='"      + body      + '\'' +
+                '}';
     }
 }
