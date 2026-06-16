@@ -10,7 +10,18 @@ public class BaseCommands  {
     List<Class<? extends Command>> subCommandsClasses = List.of(
         UsuarioCommands.class,
         AdminCommands.class,
-        SecretariaCommands.class
+        SecretariaCommands.class,
+        PacienteCommands.class,
+        MedicoCommands.class,
+        PermisoCommands.class,
+        MedicosInvolucradosCommands.class,
+        CitaCommands.class,
+        HistoriaClinicaCommands.class,
+        ServicioCommands.class,
+        DiagnosticoCommands.class,
+        TratamientoCommands.class,
+        CitaCommands.class,
+        ConsultaCommands.class
     );
 
     public CommandResponse execute (AppContext ctx, Session session, List<String> args) {        
@@ -48,8 +59,24 @@ public class BaseCommands  {
                     return new UsuarioCommands().execute(ctx, session, args);
                 case "admin":
                     return new AdminCommands().execute(ctx, session, args);
+                case "paciente":
+                    return new PacienteCommands().execute(ctx, session, args);
+                case "medico":
+                    return new MedicoCommands().execute(ctx, session, args);
                 case "secretaria":
                     return new SecretariaCommands().execute(ctx, session, args);
+                case "cita":
+                    return new CitaCommands().execute(ctx, session, args);
+                case "historia":
+                    return new HistoriaClinicaCommands().execute(ctx, session, args);
+                case "servicio":
+                    return new ServicioCommands().execute(ctx, session, args);
+                case "diagnostico":
+                    return new DiagnosticoCommands().execute(ctx, session, args);
+                case "tratamiento":
+                    return new TratamientoCommands().execute(ctx, session, args);
+                case "permiso":
+                    return new PermisoCommands().execute(ctx, session, args);
                 default:
                     throw new InvalidArgumentException( "Comando desconocido: " + mainCommand);
             }

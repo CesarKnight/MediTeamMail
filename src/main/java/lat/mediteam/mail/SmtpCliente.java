@@ -2,7 +2,6 @@ package lat.mediteam.mail;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
@@ -30,85 +29,75 @@ public class SmtpCliente {
         this(servidor, user_receptor, user_emisor, 25);
     }
 
-    public void connect(){
+    public boolean connect(int timeout){
         try {
             socketSMTP = new Socket(servidor, puertoSMTP);
+            socketSMTP.setSoTimeout(timeout);
             entrada = new BufferedReader(new InputStreamReader(socketSMTP.getInputStream()));
             salida = new BufferedWriter(new OutputStreamWriter(socketSMTP.getOutputStream()));
 
-            System.out.println("S : " + entrada.readLine());
-        } catch (IOException e) {
-            System.out.println("S : No se pudo conectar error: " + e.getMessage());
+            entrada.readLine();
+            return true;
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException("S: No se pudo conectar al servidor SMTP: " + e.getMessage());
         }
     }
 
-    public void sendEmail(String Subject, String plainBody, String htmlBody){
+    public boolean sendEmail(String Subject, String body){
         if (socketSMTP == null || entrada == null || salida == null) {
-            System.out.println(" S : No se pudo establecer la conexión con el servidor SMTP");
-            return;
+            throw new RuntimeException(" S : No se pudo establecer la conexión con el servidor SMTP");
         }
+        boolean delivered = false;
         try {
             comando="HELO "+servidor+" \r\n";
             System.out.print("C : "+comando);
             salida.write( comando );   
             salida.flush();
-            System.out.println("S : " + entrada.readLine());
+            entrada.readLine();
             
             comando="MAIL FROM: <"+user_emisor+"> \r\n";
             System.out.print("C : "+comando);
             salida.write( comando );               
             salida.flush();
-            System.out.println("S : "+entrada.readLine());               
+            entrada.readLine();
 
             comando="RCPT TO: <"+user_receptor+"> \r\n";
             System.out.print("C : "+comando);
             salida.write( comando );               
             salida.flush();
-            System.out.println("S : "+entrada.readLine());
+            entrada.readLine();
             
             comando="DATA\r\n";
             System.out.print("C : "+comando);
             salida.write( comando );               
             salida.flush();
-            System.out.println("S : "+entrada.readLine());
+            System.out.println(entrada.readLine());
             
-            String boundary = "boundary-simple-123456";
 
             comando="From: "+user_emisor+"\r\n"+"To: "+user_receptor+"\r\n";
-            System.out.print("C : "+comando);
             salida.write( comando );               
 
-                comando="Subject: "+Subject+"\r\n"
-                    +"MIME-Version: 1.0\r\n"
-                    +"Content-Type: multipart/alternative; boundary=\""+boundary+"\"\r\n"
-                    +"\r\n"
-                    +"--"+boundary+"\r\n"
-                    +"Content-Type: text/plain; charset=UTF-8\r\n"
-                    +"Content-Transfer-Encoding: 7bit\r\n"
-                    +"\r\n"
-                    +plainBody+"\r\n"
-                    +"\r\n"
-                    +"--"+boundary+"\r\n"
-                    +"Content-Type: text/html; charset=UTF-8\r\n"
-                    +"Content-Transfer-Encoding: 7bit\r\n"
-                    +"\r\n"
-                    +htmlBody+"\r\n"
-                    +"\r\n"
-                    +"--"+boundary+"--\r\n"
-                    +".\r\n";
+            comando="Subject: "+Subject+"\r\n" +
+                    body+ "\r\n"+
+                    ".\r\n";
 
-            System.out.print("C : "+comando);
-            salida.write( comando );               
+            salida.write( comando ); 
+            System.out.println(comando);              
             salida.flush();
-            System.out.println("S : "+entrada.readLine());
-            
+            String response = entrada.readLine();
+
+            if (response.startsWith("250")) {
+                delivered = true;
+            }
+
             comando="QUIT\r\n";
-            System.out.print("C : "+comando);
             salida.write( comando );    
-            salida.flush();           
-            System.out.println("S : "+entrada.readLine());   
-        } catch (IOException e) {
-            System.out.println(" S : Error al enviar el correo: " + e.getMessage());
+            salida.flush();
+            System.out.println(entrada.readLine());
+            return delivered;
+        } catch (Exception e) {
+            return false;
         } finally {
             disconnect();
         }
@@ -119,8 +108,8 @@ public class SmtpCliente {
             if (socketSMTP != null) socketSMTP.close();
             if (entrada != null) entrada.close();
             if (salida != null) salida.close();
-        } catch (IOException e) {
-            System.out.println(" S : Error al cerrar la conexión: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("S: Error al cerrar la conexión: " + e.getMessage());
         }
     }
 }
