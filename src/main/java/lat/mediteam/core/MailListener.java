@@ -37,10 +37,11 @@ public class MailListener {
 				popCliente.logout();
 				popCliente.disconnect();
 
-				System.out.println("Durmiendo... ");
+			}else{
+				System.out.println("Inicio de sesion en POP fallido");
 			}
-			
 			try {
+				System.out.println("Durmiendo... ");
 				Thread.sleep(tasaRefresco);
 			} catch (InterruptedException e) {
 				System.out.println("Error en el Listener: " + e.getMessage());

@@ -1,10 +1,13 @@
 package lat.mediteam.mail;
 
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 
 public class PopCliente {
     int puertoPop;
@@ -32,7 +35,9 @@ public class PopCliente {
 
     public boolean connect(int timeout){
         try {
-            socketPOP = new Socket(servidor,puertoPop);
+            socketPOP = new Socket();
+            SocketAddress socketAddress = new InetSocketAddress(servidor,puertoPop); 
+            socketPOP.connect(socketAddress, timeout);
             socketPOP.setSoTimeout(timeout);
 
             entrada = new BufferedReader(new InputStreamReader(socketPOP.getInputStream()));

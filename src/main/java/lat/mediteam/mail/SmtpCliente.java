@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 
 public class SmtpCliente {
     int puertoSMTP;
@@ -31,8 +33,11 @@ public class SmtpCliente {
 
     public boolean connect(int timeout){
         try {
-            socketSMTP = new Socket(servidor, puertoSMTP);
+            socketSMTP = new Socket();
+            SocketAddress socketAddress = new InetSocketAddress(servidor,puertoSMTP); 
+            socketSMTP.connect(socketAddress, timeout);
             socketSMTP.setSoTimeout(timeout);
+
             entrada = new BufferedReader(new InputStreamReader(socketSMTP.getInputStream()));
             salida = new BufferedWriter(new OutputStreamWriter(socketSMTP.getOutputStream()));
 
