@@ -2,7 +2,6 @@ package lat.mediteam.mail;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
@@ -30,19 +29,22 @@ public class SmtpCliente {
         this(servidor, user_receptor, user_emisor, 25);
     }
 
-    public void connect(){
+    public boolean connect(int timeout){
         try {
             socketSMTP = new Socket(servidor, puertoSMTP);
+            socketSMTP.setSoTimeout(timeout);
             entrada = new BufferedReader(new InputStreamReader(socketSMTP.getInputStream()));
             salida = new BufferedWriter(new OutputStreamWriter(socketSMTP.getOutputStream()));
-            String response = entrada.readLine();
-            System.out.println("S : " + response);
-        } catch (IOException e) {
-            throw new RuntimeException("S: No se pudo conectar al servidor SMTP: " + e.getMessage());
+
+            entrada.readLine();
+            return true;
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException("S: No se pudo conectar al servidor SMTP: " + e.getMessage());
         }
     }
 
-    public boolean sendEmail(String Subject, String plainBody, String htmlBody){
+    public boolean sendEmail(String Subject, String body){
         if (socketSMTP == null || entrada == null || salida == null) {
             throw new RuntimeException(" S : No se pudo establecer la conexión con el servidor SMTP");
         }
@@ -77,7 +79,7 @@ public class SmtpCliente {
             salida.write( comando );               
 
             comando="Subject: "+Subject+"\r\n" +
-                    plainBody+ "\r\n"+
+                    body+ "\r\n"+
                     ".\r\n";
 
             salida.write( comando ); 
@@ -94,7 +96,7 @@ public class SmtpCliente {
             salida.flush();
             System.out.println(entrada.readLine());
             return delivered;
-        } catch (IOException e) {
+        } catch (Exception e) {
             return false;
         } finally {
             disconnect();
@@ -106,7 +108,7 @@ public class SmtpCliente {
             if (socketSMTP != null) socketSMTP.close();
             if (entrada != null) entrada.close();
             if (salida != null) salida.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException("S: Error al cerrar la conexión: " + e.getMessage());
         }
     }

@@ -14,10 +14,12 @@ public class App
             "| MAIL_SERVER: " + Config.MAIL_SERVER+ "\n" +
             "| MAIL_TO_LISTEN: " + Config.MAIL_TO_LISTEN+ "\n" +
             "| PASSWORD: " + Config.PASSWORD+ "\n" +
-            "| COMANDO_EJECUCION: " + Config.COMANDO_EJECUCION+ "\n" +
             "| MAIL_SYNC_INTERVAL_MS: " + Config.MAIL_SYNC_INTERVAL_MS+ "\n" +
-            "| MAX_THREADS: " + Config.MAX_THREADS+ "\n";
-        
+            "| MAX_THREADS: " + Config.MAX_THREADS+ "\n"+
+            "| SESSION_LIFE_MINUTES: " + Config.SESSION_LIFE_MINUTES+ "\n" +
+            "| MAX_SEND_EMAIL_RETRIES: " + Config.MAX_SEND_EMAIL_RETRIES+ "\n"+
+            "| POP_TIMETOUT_MS: " + Config.POP_TIMETOUT_MS+ "\n" +
+            "| SMTP_TIMETOUT_MS: " + Config.SMTP_TIMEOUT_MS+ "\n" ;
         
         System.out.println(info);
         DatabaseManager.getEntityManager().close();

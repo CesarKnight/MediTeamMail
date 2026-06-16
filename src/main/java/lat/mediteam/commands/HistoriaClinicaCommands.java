@@ -1,7 +1,6 @@
 package lat.mediteam.commands;
 
 import java.util.List;
-import java.util.concurrent.Callable;
 
 import lat.mediteam.controllers.HistoriaClinicaController;
 import lat.mediteam.controllers.MedicosInvolucradosController;
@@ -12,7 +11,7 @@ import lat.mediteam.enums.HistoriaClinicaTipo;
 import lat.mediteam.exceptions.InvalidArgumentException;
 import lat.mediteam.services.HistoriaClinicaService;
 import lat.mediteam.services.MedicosInvolucradosService;
-
+    
 public class HistoriaClinicaCommands implements Command {
 
     private AppContext ctx;

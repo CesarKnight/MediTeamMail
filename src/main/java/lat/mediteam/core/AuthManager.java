@@ -14,7 +14,7 @@ public class AuthManager {
             email,
             permisos,
             Instant.now(),
-            Instant.now().plus(1, ChronoUnit.HOURS)
+            Instant.now().plus(Config.SESSION_LIFE_MINUTES, ChronoUnit.MINUTES)
         );
 
         sessions.put(email, session);

@@ -2,7 +2,6 @@ package lat.mediteam.mail;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
@@ -31,25 +30,31 @@ public class PopCliente {
         this(servidor, usuario, contrasena, 110);// Puerto por defecto del protocolo POP3
     }
 
-    public void connect(){
+    public boolean connect(int timeout){
         try {
             socketPOP = new Socket(servidor,puertoPop);
+            socketPOP.setSoTimeout(timeout);
+
             entrada = new BufferedReader(new InputStreamReader(socketPOP.getInputStream()));
             salida = new BufferedWriter(new OutputStreamWriter(socketPOP.getOutputStream()));
             entrada.readLine();
+            return true;
             
-        } catch (IOException e) {
-            throw new RuntimeException("No se pudo conectar al servidor POP3: " + e.getMessage());
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException("No se pudo conectar al servidor POP3: " + e.getMessage());
         }
     }
 
-    public void disconnect(){
+    public boolean disconnect(){
         try {
             if (socketPOP != null) socketPOP.close();
             if (entrada != null) entrada.close();
             if (salida != null) salida.close();
-        } catch (IOException e) {
-            throw new RuntimeException("Error al cerrar la conexión: " + e.getMessage());
+            return true;
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException("Error al cerrar la conexión: " + e.getMessage());
         }
     }
 
@@ -72,14 +77,15 @@ public class PopCliente {
             } else {
                 return false;
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Error al iniciar sesión: " + e.getMessage());
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException("Error al iniciar sesión: " + e.getMessage());
         }
     }
 
-    public void logout(){
+    public boolean logout(){
         if (!isLoggedIn) {
-            return;
+            return false;
         }
         
         try {
@@ -88,8 +94,10 @@ public class PopCliente {
             salida.flush();
             entrada.readLine();
             isLoggedIn = false;
-        } catch (IOException e) {
-            throw new RuntimeException(" S : Error al cerrar sesión: " + e.getMessage());
+            return true;
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException(" S : Error al cerrar sesión: " + e.getMessage());
         }
     }
 
@@ -112,12 +120,11 @@ public class PopCliente {
                     emailCount = Integer.parseInt(parts[1]);
                 }
             } else {
-
                 // Si la respuesta no es +OK, se considera que no se pudo obtener el número de correos
                 return -1;
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Error al obtener el número de correos: " + e.getMessage());
+        } catch (Exception e) {
+            return -1;
         }
         return emailCount;
     }
@@ -132,7 +139,7 @@ public class PopCliente {
             salida.write( comando );    
             salida.flush();           
             return readMultilineResponse();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException("S: Error al leer el correo: " + e.getMessage());
         }
     }
@@ -153,12 +160,13 @@ public class PopCliente {
             } else {
                 return false;
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Error al eliminar el correo #" +emailIndex+ ": " + e.getMessage());
+        } catch (Exception e) {
+            return false;
+            // throw new RuntimeException("Error al eliminar el correo #" +emailIndex+ ": " + e.getMessage());
         }
     }
 
-    private String readMultilineResponse() throws IOException {
+    private String readMultilineResponse() throws Exception {
         StringBuilder response = new StringBuilder();
         String line;
         while ((line = entrada.readLine()) != null) {

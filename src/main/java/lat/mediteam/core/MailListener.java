@@ -1,7 +1,5 @@
 package lat.mediteam.core;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lat.mediteam.mail.PopCliente;
@@ -11,7 +9,7 @@ import lat.mediteam.mail.PopCliente;
 public class MailListener {
     
 	public static void runServer(AppContext appContext) {
-		final int tasaRefresco = Config.MAIL_SYNC_INTERVAL_MS;
+		final long tasaRefresco = Config.MAIL_SYNC_INTERVAL_MS;
 		final String mailServer = Config.MAIL_SERVER;
 		final String email = Config.MAIL_TO_LISTEN;
 		final String password = Config.PASSWORD;
@@ -23,10 +21,10 @@ public class MailListener {
 		System.out.println("Escuchando correos en " + email + "@" + mailServer.substring(5));
 
 		while (true) {
-			try {
-				popCliente.connect();
-				popCliente.login();
-
+			Boolean loggedIn = popCliente.connect(Config.POP_TIMETOUT_MS);
+			loggedIn = popCliente.login();
+			
+			if (loggedIn){
 				int emailCount = popCliente.getEmailCount();
 				System.out.println("Cantidad de correos a responder: " + emailCount);
 				
@@ -40,8 +38,10 @@ public class MailListener {
 				popCliente.disconnect();
 
 				System.out.println("Durmiendo... ");
+			}
+			
+			try {
 				Thread.sleep(tasaRefresco);
-
 			} catch (InterruptedException e) {
 				System.out.println("Error en el Listener: " + e.getMessage());
 			}

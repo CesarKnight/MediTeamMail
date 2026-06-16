@@ -3,6 +3,8 @@ package lat.mediteam.core;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lat.mediteam.commands.CommandResponse;
 import lat.mediteam.commands.BaseCommands;
@@ -37,11 +39,23 @@ public class RespuestaWorker implements Runnable{
         System.out.println(parsedEmail);
     }
 
-    private CommandResponse executeCommand(String command) {
-        List<String> tokens = new ArrayList<>(List.of(command.split("\\s+")));
-        return parser.execute(appContext, session, tokens);
+    private List<String> tokenize(String command) {
+        List<String> tokens = new ArrayList<>();
+        Matcher matcher = Pattern.compile("\"([^\"]*)\"|'([^')']*)'|(\\S+)").matcher(command);
+        
+        while (matcher.find()) {
+            if (matcher.group(1) != null) {
+                tokens.add(matcher.group(1)); // Double-quoted: strip quotes
+            } else if (matcher.group(2) != null) {
+                tokens.add(matcher.group(2)); // Single-quoted: strip quotes
+            } else {
+                tokens.add(matcher.group(3)); // Unquoted token
+            }
+        }
+        
+        return tokens;
     }
-
+    
     private void sendEmail(String recipient, String subject, String body) {
         int pointIndex = Config.MAIL_SERVER.indexOf(".") + 1;
         String fullServerSender = Config.MAIL_TO_LISTEN + "@" + Config.MAIL_SERVER.substring(pointIndex);
@@ -52,14 +66,30 @@ public class RespuestaWorker implements Runnable{
             fullServerSender
         );
         
-        smtp.connect();
-        smtp.sendEmail(subject,body,""); //todo cambiar implementacion de smtp
-
-        System.out.println(
-            "Enviando correo a " + recipient + "\n" + 
-            "Con asunto '" + subject + "'\n" 
-            // + "Cuerpo: \n" + body
-        );
+        Boolean enviado = false;
+        
+        int retries = 0;
+        while (retries < Config.MAX_SEND_EMAIL_RETRIES) {
+            smtp.connect(Config.SMTP_TIMEOUT_MS);
+            enviado = smtp.sendEmail(subject,body);
+            if (enviado){
+                smtp.disconnect();
+                
+                System.out.println(
+                    "Correo enviado a " + recipient + "\n" + 
+                    "Con asunto '" + subject + "'\n" 
+                    + "Cuerpo: \n" + body
+                );
+                break;
+            }
+            
+            System.out.println("fallo al enviar respuesta a " + parsedEmail.getSender());
+            System.out.println("reenviando...");
+            retries++;
+        }
+        if (retries > Config.MAX_SEND_EMAIL_RETRIES){
+            System.out.println("NO se puedo enviar el correo a " +  parsedEmail.getSender() + " \n Con sujeto: " + subject);
+        }
     }
 
 
@@ -75,15 +105,16 @@ public class RespuestaWorker implements Runnable{
             
             session = appContext.getAuthManager().findByEmail(parsedEmail.getSender());
             if (session == null) {
-                session = Session.nonAuthenticated(parsedEmail.getSender()); // produccion
+                session = Session.nonAuthenticated(parsedEmail.getSender());
             }
             
             System.out.println("Comando recibido: " + parsedEmail.getSubject());
+            
             String command = parsedEmail.getSubject().trim();
-            CommandResponse response = executeCommand(command);
+            List<String> tokens = tokenize(command);
+            CommandResponse response = parser.execute(appContext, session, tokens);;
             
             System.out.println("Comando ejecutado exitosamente para usuario " + parsedEmail.getSender());
-            
             sendEmail(
                 parsedEmail.getSender(),
                 "Respuesta a comando: " + command, 
@@ -91,7 +122,7 @@ public class RespuestaWorker implements Runnable{
             );
             
         } catch (Exception e) {
-            String errorMessage = e.getClass().getSimpleName() + ": " + e.getMessage();
+            String errorMessage = "Error " + e.getClass().getSimpleName() + ": " + e.getMessage();
             sendEmail(
                 parsedEmail.getSender(),
                 "Error al ejecutar commando: " + parsedEmail.getSubject(), 

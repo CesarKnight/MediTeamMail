@@ -63,7 +63,7 @@ public class BaseCommands  {
                     return new MedicoCommands().execute(ctx, session, args);
                 case "cita":
                     return new CitaCommands().execute(ctx, session, args);
-                case "historiaclinica":
+                case "historia":
                     return new HistoriaClinicaCommands().execute(ctx, session, args);
                 case "servicio":
                     return new ServicioCommands().execute(ctx, session, args);
