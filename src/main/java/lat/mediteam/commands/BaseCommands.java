@@ -10,9 +10,10 @@ public class BaseCommands  {
     List<Class<? extends Command>> subCommandsClasses = List.of(
         UsuarioCommands.class,
         AdminCommands.class,
+        SecretariaCommands.class,
         PacienteCommands.class,
-        PermisoCommands.class,
         MedicoCommands.class,
+        PermisoCommands.class,
         MedicosInvolucradosCommands.class,
         CitaCommands.class,
         HistoriaClinicaCommands.class,
@@ -43,6 +44,7 @@ public class BaseCommands  {
                     return new AuthCommands().login(ctx, session, args);
                 default:
                     throw new InvalidArgumentException( "Comando desconocido o requiere sesión: " + mainCommand);
+                    
             }
         }
     
@@ -61,6 +63,8 @@ public class BaseCommands  {
                     return new PacienteCommands().execute(ctx, session, args);
                 case "medico":
                     return new MedicoCommands().execute(ctx, session, args);
+                case "secretaria":
+                    return new SecretariaCommands().execute(ctx, session, args);
                 case "cita":
                     return new CitaCommands().execute(ctx, session, args);
                 case "historia":
