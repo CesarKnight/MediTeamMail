@@ -17,3 +17,9 @@ SMTP_TIMEOUT_MS=5000
 MAIL_SYNC_INTERVAL_MS=3000
 SESSION_LIFE_MINUTES=30
 MAX_SEND_EMAIL_RETRIES=3
+
+#PAGOFACIL credenciales
+COMMERCE_ID=example
+TOKEN_SERVICE=exampleexample
+TOKEN_SECRET=otro mas
+CALLBACK_URL=https://mediteampagofacilcallback.onrender.com/callback - mio mio
