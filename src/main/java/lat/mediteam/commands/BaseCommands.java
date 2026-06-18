@@ -15,13 +15,13 @@ public class BaseCommands  {
         MedicoCommands.class,
         PermisoCommands.class,
         MedicosInvolucradosCommands.class,
-        CitaCommands.class,
         HistoriaClinicaCommands.class,
         ServicioCommands.class,
         DiagnosticoCommands.class,
         TratamientoCommands.class,
         CitaCommands.class,
-        ConsultaCommands.class
+        ConsultaCommands.class,
+        PagoCommands.class
     );
 
     public CommandResponse execute (AppContext ctx, Session session, List<String> args) {        
