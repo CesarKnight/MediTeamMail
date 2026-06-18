@@ -63,7 +63,7 @@ public class HistoriaClinicaCommands implements Command {
     @Override
     public String getHelp() {
         return "Comandos de historia clínica:\n"
-            + "  historia crear <medicoId> <fecha> <estado> <tipo>\n"
+            + "  historia crear <medicoId> <pacienteId> <fecha> <estado> <tipo>\n"
             + "  historia obtener <id>\n"
             + "  historia listar\n"
             + "  historia editar <id> <fecha> <estado> <tipo>\n"
@@ -81,13 +81,14 @@ public class HistoriaClinicaCommands implements Command {
         }
 
         Long medicoId = parseId(args.get(0));
-        String fecha = args.get(1);
+        Long pacienteId = parseId(args.get(1));
+        String fecha = args.get(2);
 
         HistoriaClinicaEstado estado =
-            parseEstado(args.get(2));
+            parseEstado(args.get(3));
 
         HistoriaClinicaTipo tipo =
-            parseTipo(args.get(3));
+            parseTipo(args.get(4));
 
         HistoriaClinicaController controller =
             new HistoriaClinicaController(
@@ -98,6 +99,7 @@ public class HistoriaClinicaCommands implements Command {
 
         return controller.crearHistoria(
             medicoId,
+            pacienteId,
             fecha,
             estado,
             tipo

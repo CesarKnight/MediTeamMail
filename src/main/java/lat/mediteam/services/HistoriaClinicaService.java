@@ -14,6 +14,7 @@ import lat.mediteam.exceptions.InvalidArgumentException;
 import lat.mediteam.exceptions.ServiceException;
 import lat.mediteam.models.HistoriaClinica;
 import lat.mediteam.models.Medico;
+import lat.mediteam.models.Paciente;
 
 public class HistoriaClinicaService {
 
@@ -23,6 +24,7 @@ public class HistoriaClinicaService {
 
     public HistoriaClinica crear(
             Long medicoId,
+            Long pacienteId,
             String fecha,
             HistoriaClinicaEstado estado,
             HistoriaClinicaTipo tipo) {
@@ -42,10 +44,19 @@ public class HistoriaClinicaService {
                                 + medicoId);
             }
 
+            Paciente paciente = em.find(Paciente.class, medicoId);
+
+            if (paciente == null) {
+                throw new EntityNotFoundException(
+                        "Paciente no encontrado: "
+                                + pacienteId);
+            }
+
             HistoriaClinica historia = new HistoriaClinica(
                     estado,
                     tipo,
-                    medico);
+                    medico,
+                    paciente);
 
             tx.begin();
             em.persist(historia);

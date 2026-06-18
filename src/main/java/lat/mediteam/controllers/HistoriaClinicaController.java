@@ -30,12 +30,14 @@ public class HistoriaClinicaController {
 
     public CommandResponse crearHistoria(
             Long medicoId,
+            Long pacienteId,
             String fecha,
             HistoriaClinicaEstado estado,
             HistoriaClinicaTipo tipo) {
 
         HistoriaClinica historia = service.crear(
                 medicoId,
+                pacienteId,
                 fecha,
                 estado,
                 tipo);
@@ -60,12 +62,14 @@ public class HistoriaClinicaController {
         return new CommandResponse(
                 true,
                 historia.getId()
-                        + " - "
-                        + historia.getFechaCreacion()
-                        + " - "
-                        + historia.getEstado()
-                        + " - "
-                        + historia.getTipo());
+                + " - "
+                + historia.getPaciente().getApellido()
+                + " - "
+                + historia.getFechaCreacion()
+                + " - "
+                + historia.getEstado()
+                + " - "
+                + historia.getTipo());
     }
 
     public CommandResponse listarHistorias() {
@@ -89,6 +93,8 @@ public class HistoriaClinicaController {
 
             resultado
                     .append(h.getId())
+                    .append(" - ")
+                    .append(h.getPaciente().getApellido())
                     .append(" - ")
                     .append(h.getFechaCreacion())
                     .append(" - ")
