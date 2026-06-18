@@ -41,7 +41,7 @@ public class SmtpCliente {
             entrada = new BufferedReader(new InputStreamReader(socketSMTP.getInputStream()));
             salida = new BufferedWriter(new OutputStreamWriter(socketSMTP.getOutputStream()));
 
-            entrada.readLine();
+            System.out.println(entrada.readLine());
             return true;
         } catch (Exception e) {
             return false;
@@ -49,41 +49,45 @@ public class SmtpCliente {
         }
     }
 
-    public boolean sendEmail(String Subject, String body){
+    private String normalizeLineEndings(String text) {
+        if (text == null) return "";
+        // Normalize all variants (\r\n, \r, \n) to \r\n
+        return text.replaceAll("\r\n|\r|\n", "\r\n");
+    }
+
+    public boolean sendEmail(String Subject, String rawBody){
         if (socketSMTP == null || entrada == null || salida == null) {
             throw new RuntimeException(" S : No se pudo establecer la conexión con el servidor SMTP");
         }
+
+        String body = normalizeLineEndings(rawBody);
         boolean delivered = false;
         try {
             comando="HELO "+servidor+" \r\n";
             System.out.print("C : "+comando);
             salida.write( comando );   
             salida.flush();
-            entrada.readLine();
+            System.out.println(entrada.readLine());
             
             comando="MAIL FROM: <"+user_emisor+"> \r\n";
             System.out.print("C : "+comando);
             salida.write( comando );               
             salida.flush();
-            entrada.readLine();
+            System.out.println(entrada.readLine());
 
             comando="RCPT TO: <"+user_receptor+"> \r\n";
             System.out.print("C : "+comando);
             salida.write( comando );               
             salida.flush();
-            entrada.readLine();
+            System.out.println(entrada.readLine());
             
             comando="DATA\r\n";
             System.out.print("C : "+comando);
             salida.write( comando );               
             salida.flush();
-            System.out.println(entrada.readLine());
-            
+            System.out.println(entrada.readLine());     
 
-            comando="From: "+user_emisor+"\r\n"+"To: "+user_receptor+"\r\n";
-            salida.write( comando );               
-
-            comando="Subject: "+Subject+"\r\n" +
+            comando="Subject: "+Subject+"\r\n"+
                     body+ "\r\n"+
                     ".\r\n";
 
@@ -91,7 +95,7 @@ public class SmtpCliente {
             System.out.println(comando);              
             salida.flush();
             String response = entrada.readLine();
-
+            System.out.println(response);
             if (response.startsWith("250")) {
                 delivered = true;
             }
@@ -102,6 +106,7 @@ public class SmtpCliente {
             System.out.println(entrada.readLine());
             return delivered;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         } finally {
             disconnect();
