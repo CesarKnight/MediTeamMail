@@ -77,6 +77,8 @@ public class BaseCommands  {
                     return new TratamientoCommands().execute(ctx, session, args);
                 case "permiso":
                     return new PermisoCommands().execute(ctx, session, args);
+                case "pago":
+                    return new PagoCommands().execute(ctx, session, args);
                 default:
                     throw new InvalidArgumentException( "Comando desconocido: " + mainCommand);
             }

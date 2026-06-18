@@ -115,10 +115,17 @@ public class RespuestaWorker implements Runnable{
             CommandResponse response = parser.execute(appContext, session, tokens);;
             
             System.out.println("Comando ejecutado exitosamente para usuario " + parsedEmail.getSender());
+
+            Email respuestaEmail = new Email();
+            respuestaEmail.addPlainBody(response.getMessage());
+            if(response.getImageB64() != null){
+                respuestaEmail.addImageB64(response.getImageB64());
+            }
+
             sendEmail(
                 parsedEmail.getSender(),
                 "Respuesta a comando: " + command, 
-                response.getMessage()
+                respuestaEmail.getBody()
             );
             
         } catch (Exception e) {

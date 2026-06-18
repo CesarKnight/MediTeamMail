@@ -3,12 +3,17 @@ package lat.mediteam.mail;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 /**
- * Represents an email message parsed from a raw POP3 RETR response.
+ * Represents an email message parsed from a raw POP3 RETR response,
+ * or built from scratch to be sent.
  *
  * Supports:
  *  - Simple plain-text emails (e.g. sent via Telnet/SMTP)
  *  - Multipart MIME emails (e.g. sent from Gmail)
+ *  - Building a multipart MIME body (plain text + 1 base64 image) for sending,
+ *    retrievable raw via {@link #getBody()}
  */
 @Getter
 @Setter
@@ -19,6 +24,9 @@ public class Email {
     private String recipient;
     private String subject;
     private String body;
+
+    /** Boundary used when building a multipart MIME body (plain text + image). */
+    private String mimeBoundary;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -33,6 +41,81 @@ public class Email {
     public Email(String raw, String mailServer) {
         this.mailServer = mailServer;
         parse(raw);
+    }
+
+    public Email() {
+        this.mimeBoundary = "----=_Boundary_" + UUID.randomUUID().toString().replace("-", "");
+    }
+
+    // -------------------------------------------------------------------------
+    // Building outbound body (plain text + image)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Initializes the multipart MIME body with the outer headers and the
+     * plain-text part. Must be called before {@link #addImageB64(String)}.
+     *
+     * If called with a null/blank text, an empty plain-text part is still
+     * written so the MIME structure stays valid.
+     *
+     * @param plainTextBody The plain-text content of the email
+     */
+    public void addPlainBody(String plainTextBody) {
+        String text = plainTextBody != null ? plainTextBody : "";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("MIME-Version: 1.0\r\n");
+        sb.append("Content-Type: multipart/mixed; boundary=\"").append(mimeBoundary).append("\"\r\n");
+        sb.append("\r\n");
+        sb.append("--").append(mimeBoundary).append("\r\n");
+        sb.append("Content-Type: text/plain; charset=\"UTF-8\"\r\n");
+        sb.append("\r\n");
+        sb.append(text).append("\r\n");
+
+        this.body = sb.toString();
+    }
+
+    /**
+     * Appends a single base64-encoded image as a MIME part to the body
+     * started by {@link #addPlainBody(String)}, and closes the MIME structure.
+     *
+     * If imageB64 is null/blank, no image part is added and the body is
+     * simply closed after the plain-text part.
+     *
+     * @param imageB64 Raw base64-encoded image data (already encoded, no headers)
+     */
+    public void addImageB64(String imageB64) {
+        StringBuilder sb = new StringBuilder(this.body);
+
+        if (imageB64 != null && !imageB64.isBlank()) {
+            sb.append("--").append(mimeBoundary).append("\r\n");
+            sb.append("Content-Type: image/png; name=\"image.png\"\r\n");
+            sb.append("Content-Transfer-Encoding: base64\r\n");
+            sb.append("Content-Disposition: attachment; filename=\"image.png\"\r\n");
+            sb.append("\r\n");
+            sb.append(wrapBase64(imageB64)).append("\r\n");
+        }
+
+        sb.append("--").append(mimeBoundary).append("--\r\n");
+
+        this.body = sb.toString();
+    }
+
+    /**
+     * Wraps a base64 string at 76 characters per line with CRLF, as required
+     * by RFC 2045 and expected by major email providers like Gmail.
+     *
+     * @param base64 Unwrapped base64 string
+     * @return The base64 string wrapped into 76-char lines
+     */
+    private String wrapBase64(String base64) {
+        StringBuilder wrapped = new StringBuilder();
+        int lineLength = 76;
+        for (int i = 0; i < base64.length(); i += lineLength) {
+            wrapped.append(base64, i, Math.min(i + lineLength, base64.length()));
+            wrapped.append("\r\n");
+        }
+        return wrapped.toString().stripTrailing();
     }
 
     // -------------------------------------------------------------------------

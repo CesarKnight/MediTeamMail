@@ -30,6 +30,12 @@ public final class Config {
 	public static final int MAX_SEND_EMAIL_RETRIES = Integer.parseInt(dotenv.get("MAX_SEND_EMAIL_RETRIES", "2"));
 	public static final int POP_TIMETOUT_MS = Integer.parseInt(dotenv.get("POP_TIMETOUT_MS", "5000"));
 	public static final int SMTP_TIMEOUT_MS = Integer.parseInt(dotenv.get("SMTP_TIMEOUT_MS", "5000"));
+
+	// COnfiguracion pagofacil
+	public static final String COMMERCE_ID = dotenv.get("COMMERCE_ID");
+	public static final String TOKEN_SERVICE = dotenv.get("TOKEN_SERVICE");
+	public static final String TOKEN_SECRET = dotenv.get("TOKEN_SECRET");
+	public static final String CALLBACK_URL = dotenv.get("CALLBACK_URL");
 	
 	public static String getDB_DRIVER() {
 		String db_dialect = dotenv.get("DB_DIALECT");

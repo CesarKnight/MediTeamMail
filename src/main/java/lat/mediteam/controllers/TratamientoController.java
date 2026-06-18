@@ -28,10 +28,12 @@ public class TratamientoController {
 
     public CommandResponse crearTratamiento(
             Long historiaId,
+            Long pacienteId,
             String tratamiento) {
 
         Tratamiento nuevo = service.crear(
                 historiaId,
+                pacienteId,
                 tratamiento);
 
         return new CommandResponse(

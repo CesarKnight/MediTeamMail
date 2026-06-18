@@ -29,10 +29,13 @@ public class MailListener {
 				System.out.println("Cantidad de correos a responder: " + emailCount);
 				
 				for (int i = 1; i <= emailCount; i++) {
-					String rawEmail = popCliente.readEmail(i);
-
-					threadPool.submit(new RespuestaWorker(i, mailServer, rawEmail, appContext));
-					popCliente.deleteEmail(i);
+					try {
+						String rawEmail = popCliente.readEmail(i);
+						threadPool.submit(new RespuestaWorker(i, mailServer, rawEmail, appContext));
+						popCliente.deleteEmail(i);
+					} catch (Exception e) {
+						System.out.println(e);
+					}
 				}
 				popCliente.logout();
 				popCliente.disconnect();

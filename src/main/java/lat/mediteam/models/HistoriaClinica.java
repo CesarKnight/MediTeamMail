@@ -45,12 +45,19 @@ public class HistoriaClinica {
     @Setter
     private Medico medicoCreador;
 
+    @ManyToOne
+    @JoinColumn(name = "paciente_id", nullable = false)
+    @Getter
+    @Setter
+    private Paciente paciente;
+
     protected HistoriaClinica() {}
 
-    public HistoriaClinica(HistoriaClinicaEstado estado, HistoriaClinicaTipo tipo, Medico medicoCreador) {
+    public HistoriaClinica(HistoriaClinicaEstado estado, HistoriaClinicaTipo tipo, Medico medicoCreador, Paciente paciente) {
     this.fechaCreacion = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     this.estado = estado;
     this.tipo = tipo;
     this.medicoCreador = medicoCreador;
+    this.paciente = paciente;
 }
 }
