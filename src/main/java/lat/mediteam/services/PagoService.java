@@ -12,6 +12,7 @@ import lat.mediteam.enums.PagoEstado;
 import lat.mediteam.enums.PagoTipo;
 import lat.mediteam.exceptions.InvalidArgumentException;
 import lat.mediteam.exceptions.ServiceException;
+import lat.mediteam.models.Paciente;
 import lat.mediteam.models.Pago;
 import lat.mediteam.models.Secretaria;
 import lat.mediteam.models.Servicio;
@@ -22,10 +23,10 @@ public class PagoService {
         return DatabaseManager.getEntityManager();
     }
 
-    public Pago crear(Long secretariaId, Long servicioId, String fechaCreacion,
+    public Pago crear(Long secretariaId, Long servicioId,Long pacienteId, String fechaCreacion,
                       Float total, PagoEstado estado, PagoTipo tipo) {
 
-        validarDatos(secretariaId, servicioId, fechaCreacion, total, tipo);
+        validarDatos(secretariaId, servicioId,pacienteId, fechaCreacion, total, tipo);
 
         PagoEstado estadoFinal = estado != null ? estado : PagoEstado.PENDIENTE;
 
@@ -43,7 +44,12 @@ public class PagoService {
                 throw new EntityNotFoundException("No existe un servicio con id " + servicioId);
             }
 
-            Pago pago = new Pago(fechaCreacion, total, estadoFinal, tipo, secretaria, servicio);
+            Paciente paciente = entityManager.find(Paciente.class, pacienteId);
+            if (paciente == null) {
+                throw new EntityNotFoundException("No existe un servicio con id " + pacienteId);
+            }
+
+            Pago pago = new Pago(fechaCreacion, total, estadoFinal, tipo, secretaria, servicio, paciente);
 
             transaction.begin();
             entityManager.persist(pago);
@@ -69,6 +75,7 @@ public class PagoService {
                     "SELECT p FROM Pago p " +
                     "JOIN FETCH p.secretaria " +
                     "JOIN FETCH p.servicio " +
+                    "JOIN FETCH p.paciente " +
                     "WHERE p.id = :id", Pago.class)
                 .setParameter("id", id)
                 .getSingleResult();
@@ -89,7 +96,8 @@ public class PagoService {
                 .createQuery(
                     "SELECT p FROM Pago p " +
                     "JOIN FETCH p.secretaria " +
-                    "JOIN FETCH p.servicio", Pago.class)
+                    "JOIN FETCH p.servicio" +
+                    "JOIN FETCH p.paciente", Pago.class)
                 .getResultList();
         } catch (RuntimeException e) {
             throw new ServiceException("No se pudieron listar los pagos", e);
@@ -98,12 +106,14 @@ public class PagoService {
         }
     }
 
-    private void validarDatos(Long secretariaId, Long servicioId, String fechaCreacion,
+    private void validarDatos(Long secretariaId, Long servicioId,Long pacienteId, String fechaCreacion,
                                Float total, PagoTipo tipo) {
         if (secretariaId == null || secretariaId <= 0)
             throw new InvalidArgumentException("El id de secretaria es obligatorio");
         if (servicioId == null || servicioId <= 0)
             throw new InvalidArgumentException("El id de servicio es obligatorio");
+        if (pacienteId == null || pacienteId <= 0)
+            throw new InvalidArgumentException("El id de paciente es obligatorio");
         if (fechaCreacion == null || fechaCreacion.isBlank())
             throw new InvalidArgumentException("La fecha de creación es obligatoria");
         if (total == null || total <= 0)

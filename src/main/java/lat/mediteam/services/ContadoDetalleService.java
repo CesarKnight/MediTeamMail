@@ -38,10 +38,6 @@ public class ContadoDetalleService {
                 throw new ServiceException("El pago con id " + pagoId + " ya tiene un detalle registrado");
             }
 
-            if (montoRecibido < pago.getTotal()) {
-                throw new InvalidArgumentException(
-                    "El monto recibido (" + montoRecibido + ") es menor al total del pago (" + pago.getTotal() + ")");
-            }
 
             Float cambio = metodoPago == MetodoPago.EFECTIVO
                 ? montoRecibido - pago.getTotal()
@@ -89,7 +85,5 @@ public class ContadoDetalleService {
             throw new InvalidArgumentException("El id de pago es obligatorio");
         if (metodoPago == null)
             throw new InvalidArgumentException("El método de pago es obligatorio");
-        if (montoRecibido == null || montoRecibido <= 0)
-            throw new InvalidArgumentException("El monto recibido debe ser mayor a 0");
     }
 }

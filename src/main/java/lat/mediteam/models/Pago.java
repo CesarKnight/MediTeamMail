@@ -53,6 +53,12 @@ public class Pago {
     private Secretaria secretaria;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "paciente_id", nullable = false)
+    @Getter
+    @Setter
+    private Paciente paciente;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "servicio_id", nullable = false)
     @Getter
     @Setter
@@ -66,12 +72,13 @@ public class Pago {
     protected Pago() {}
 
     public Pago(String fechaCreacion, Float total, PagoEstado estado, PagoTipo tipo,
-                Secretaria secretaria, Servicio servicio) {
+                Secretaria secretaria, Servicio servicio, Paciente paciente) {
         this.fechaCreacion = fechaCreacion;
         this.total = total;
         this.estado = estado;
         this.tipo = tipo;
         this.secretaria = secretaria;
         this.servicio = servicio;
+        this.paciente = paciente;
     }
 }

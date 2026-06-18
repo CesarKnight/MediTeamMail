@@ -24,11 +24,12 @@ public class PagoController {
         this.service = service;
     }
 
-    public CommandResponse crearPago(Long secretariaId, Long servicioId, String fechaCreacion,
-                                     Float total, PagoEstado estado, PagoTipo tipo) {
-        Pago nuevo = service.crear(secretariaId, servicioId, fechaCreacion, total, estado, tipo);
+    public CommandResponse crearPago(Long secretariaId, Long servicioId, Long pacienteID, String fechaCreacion,
+                                     Float total, PagoEstado estado) {
+        Pago nuevo = service.crear(secretariaId, servicioId,pacienteID, fechaCreacion, total, estado, PagoTipo.CONTADO);
         return new CommandResponse(true,
             "Pago creado #" + nuevo.getId()
+            + " | Paciente: " + nuevo.getPaciente().getNombre() + " " + nuevo.getPaciente().getApellido()
             + " | Total: " + nuevo.getTotal()
             + " | Tipo: " + nuevo.getTipo()
             + " | Estado: " + nuevo.getEstado());

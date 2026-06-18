@@ -89,7 +89,7 @@ public class QrPagoService {
                 + "\"documentId\": \"" + clientCI + "\","
                 + "\"phoneNumber\": \"" + phoneNumber + "\","
                 + "\"email\": \"" + clientEmail + "\","
-                + "\"paymentNumber\": \"" + paymentNumber + "\","
+                + "\"paymentNumber\": \"" + " 7777777"+paymentNumber + "\","
                 + "\"amount\": " + amount + ","
                 + "\"currency\": 2,"
                 + "\"clientCode\": \"" + clientCode + "\","
@@ -115,6 +115,7 @@ public class QrPagoService {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
                 String body = response.body();
+                
                 Long transactionId = extractJsonLong(body, "transactionId");
                 String qrImage = extractJsonString(body, "qrImage");
                 if (qrImage == null) {
@@ -127,6 +128,8 @@ public class QrPagoService {
                     result.put("qrImage", qrImage);
                     return result;
                 }
+            }else{
+                throw new IllegalStateException("La generación del qr fue fallida: " + response +"\n" + response.body());
             }
         } catch (Exception e) {
             e.printStackTrace();

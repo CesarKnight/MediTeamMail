@@ -43,7 +43,7 @@ public class PagoCommands implements Command {
 
     public String getHelp() {
         return "Comandos de Pago:\n" +
-               "  Pago crear <idSecretaria:numero> <idServicio:numero> <total:numero decimal> <estado:{pagado | pendiente} <tipo:{contado | cuotas} - Crea un nuevo Pago\n" +
+               "  Pago crear <idSecretaria:numero> <idServicio:numero> <idCliente:nuemero> <fecha> <total:numero decimal> <estado:{pagado | pendiente} - Crea un nuevo Pago\n" +
                "  Pago obtener <id> - Obtiene los detalles de un Pago por ID\n" +
                "  Pago listar - Lista todos los Pagos\n"+
                "  Pago pagar <pagoId> <metodoPago:{efectivo | qr}> <montoRecibido> - Registra el detalle de pago (fecha = hoy) - MontoRecibido será sobreescrito por la llegada de QR si usa el metodo";
@@ -58,13 +58,13 @@ public class PagoCommands implements Command {
  
         Long secretariaId = parseId(args.get(0), "secretaria");
         Long servicioId = parseId(args.get(1), "servicio");
-        String fechaCreacion = args.get(2);
-        Float total = parseTotal(args.get(3));
-        PagoTipo tipo = parseTipo(args.get(4));
+        Long pacienteId = parseId(args.get(2), "paciente");
+        String fechaCreacion = args.get(3);
+        Float total = parseTotal(args.get(4));
         PagoEstado estado = args.size() > 5 ? parseEstado(args.get(5)) : PagoEstado.PENDIENTE;
- 
+        
         PagoController controller = new PagoController(ctx, session, new PagoService());
-        return controller.crearPago(secretariaId, servicioId, fechaCreacion, total, estado, tipo);
+        return controller.crearPago(secretariaId, servicioId,pacienteId, fechaCreacion, total, estado);
     }
  
     // pago obtener <id>
