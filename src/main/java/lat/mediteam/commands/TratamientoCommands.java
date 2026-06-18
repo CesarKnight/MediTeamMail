@@ -45,7 +45,7 @@ public class TratamientoCommands implements Command {
 
             case "eliminar":
                 return eliminar(args);
-
+            
             default:
                 throw new InvalidArgumentException(
                         "Subcomando de tratamiento inválido: "
@@ -56,7 +56,7 @@ public class TratamientoCommands implements Command {
     @Override
     public String getHelp() {
         return "Comandos de tratamiento:\n"
-                + "  tratamiento crear <historiaId> <tratamiento>\n"
+                + "  tratamiento crear <historiaId> <pacienteId> <tratamiento>\n"
                 + "  tratamiento obtener <id>\n"
                 + "  tratamiento listar\n"
                 + "  tratamiento editar <id> <tratamiento>\n"
@@ -73,7 +73,8 @@ public class TratamientoCommands implements Command {
         }
 
         Long historiaId = parseId(args.get(0));
-        String tratamiento = args.get(1);
+        Long pacienteId = parseId(args.get(1));
+        String tratamiento = args.get(2);
 
         TratamientoController controller = new TratamientoController(
                 ctx,
@@ -82,6 +83,7 @@ public class TratamientoCommands implements Command {
 
         return controller.crearTratamiento(
                 historiaId,
+                pacienteId,
                 tratamiento);
     }
 

@@ -24,10 +24,17 @@ public class Tratamiento {
     @Setter
     private HistoriaClinica historia;
 
+    @ManyToOne
+    @JoinColumn(name = "paciente_id", nullable = false)
+    @Getter
+    @Setter
+    private Paciente paciente;
+
     protected Tratamiento() {}
 
-    public Tratamiento(String tratamiento, HistoriaClinica historia) {
+    public Tratamiento(String tratamiento, HistoriaClinica historia, Paciente paciente) {
         this.tratamiento = tratamiento;
         this.historia = historia;
+        this.paciente = paciente;
     }
 }
